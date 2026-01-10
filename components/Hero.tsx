@@ -17,7 +17,7 @@ const Hero: React.FC = () => {
         <div className="max-w-2xl animate-in fade-in slide-in-from-left-8 duration-700">
           <div className="flex items-center gap-2 mb-6">
             <span className="w-10 h-[2px] bg-red-600"></span>
-            <h2 className="text-red-600 font-black uppercase tracking-[0.4em] text-[10px] oswald italic">Solo Karting Official Platform</h2>
+            <h2 className="text-red-600 font-black uppercase tracking-[0.4em] text-[10px] oswald italic">KDO - Karting Disciplina Oficial</h2>
           </div>
           <h1 className="text-6xl md:text-8xl font-black italic oswald text-white mb-6 uppercase leading-[0.9] tracking-tighter">
             DOMINA LA <br />
@@ -25,7 +25,7 @@ const Hero: React.FC = () => {
           </h1>
           <p className="text-lg text-zinc-400 mb-10 leading-relaxed font-medium max-w-lg">
             Noticias, Competencias, Rankings y los mejores circuitos federados del país. 
-            Toda la adrenalina del karting nacional en un solo lugar.
+            Toda la adrenalina del karting nacional bajo fiscalización oficial.
           </p>
           <div className="flex flex-wrap gap-5">
             <Link 

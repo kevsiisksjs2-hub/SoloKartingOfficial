@@ -1,5 +1,5 @@
 
-import { Pilot, Category, User, Status, Championship, Circuit, Association, RaceResult, TrackFlag, RegistrationLink, MarketplaceItem } from '../types';
+import { Pilot, Category, User, Status, Championship, Circuit, Association, RaceResult, TrackFlag, RegistrationLink, MarketplaceItem, Regulation } from '../types';
 import { INITIAL_PILOTS, INITIAL_CHAMPIONSHIPS, INITIAL_CIRCUITS, INITIAL_ASSOCIATIONS, INITIAL_CATEGORIES, INITIAL_REGISTRATION_LINKS } from '../constants';
 
 const KEYS = {
@@ -16,7 +16,8 @@ const KEYS = {
   LIVE_RESULTS_URL: 'sk_live_url',
   HISTORY_RESULTS_URL: 'sk_history_url',
   RANKINGS_PREFIX: 'sk_ranking_',
-  MARKETPLACE: 'sk_marketplace'
+  MARKETPLACE: 'sk_marketplace',
+  REGULATIONS: 'sk_regulations',
 };
 
 export const storageService = {
@@ -105,12 +106,18 @@ export const storageService = {
     if (user) localStorage.setItem(KEYS.AUTH, JSON.stringify(user));
     else localStorage.removeItem(KEYS.AUTH);
   },
-  // Methods to retrieve and persist marketplace items
   getMarketplace: (): MarketplaceItem[] => {
     const data = localStorage.getItem(KEYS.MARKETPLACE);
     return data ? JSON.parse(data) : [];
   },
   saveMarketplace: (items: MarketplaceItem[]) => {
     localStorage.setItem(KEYS.MARKETPLACE, JSON.stringify(items));
+  },
+  getRegulations: (): Regulation[] => {
+    const data = localStorage.getItem(KEYS.REGULATIONS);
+    return data ? JSON.parse(data) : [];
+  },
+  saveRegulations: (regs: Regulation[]) => {
+    localStorage.setItem(KEYS.REGULATIONS, JSON.stringify(regs));
   }
 };

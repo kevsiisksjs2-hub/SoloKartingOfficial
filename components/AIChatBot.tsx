@@ -6,7 +6,7 @@ import { aiService } from '../services/aiService';
 const AIChatBot: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<{ role: 'user' | 'model', text: string }[]>([
-    { role: 'model', text: '¡Hola! Soy el asistente IA de Solo Karting. ¿En qué puedo ayudarte hoy?' }
+    { role: 'model', text: '¡Hola! Soy el asistente oficial de KDO. ¿En qué puedo ayudarte con tu inscripción o reglamentos?' }
   ]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -32,9 +32,9 @@ const AIChatBot: React.FC = () => {
         parts: [{ text: m.text }] 
       }));
       const response = await aiService.chatMessage(history, userMsg);
-      setMessages(prev => [...prev, { role: 'model', text: response || 'Lo siento, no pude procesar eso.' }]);
+      setMessages(prev => [...prev, { role: 'model', text: response || 'Lo siento, no pude procesar eso en este momento.' }]);
     } catch (error) {
-      setMessages(prev => [...prev, { role: 'model', text: 'Hubo un error al conectar con mi cerebro artificial.' }]);
+      setMessages(prev => [...prev, { role: 'model', text: 'Hubo un error al conectar con la base de datos de KDO.' }]);
     } finally {
       setIsLoading(false);
     }
@@ -47,7 +47,7 @@ const AIChatBot: React.FC = () => {
           <div className="bg-red-600 p-4 flex items-center justify-between text-white">
             <div className="flex items-center gap-2">
               <Sparkles size={18} />
-              <span className="font-black uppercase text-xs tracking-widest oswald">Solo Karting IA</span>
+              <span className="font-black uppercase text-xs tracking-widest oswald">KDO IA Assistant</span>
             </div>
             <button onClick={() => setIsOpen(false)} className="hover:bg-white/10 p-1 rounded-full transition-colors">
               <X size={20} />
@@ -63,7 +63,7 @@ const AIChatBot: React.FC = () => {
                   : 'bg-zinc-800 text-zinc-300 rounded-bl-none'
                 }`}>
                   <div className="flex items-center gap-2 mb-1 opacity-50 text-[10px] font-black uppercase">
-                    {m.role === 'user' ? <><User size={10} /> Tú</> : <><Bot size={10} /> Asistente</>}
+                    {m.role === 'user' ? <><User size={10} /> Tú</> : <><Bot size={10} /> KDO Bot</>}
                   </div>
                   {m.text}
                 </div>
@@ -89,7 +89,7 @@ const AIChatBot: React.FC = () => {
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleSend()}
-                placeholder="Escribe tu consulta..."
+                placeholder="Pregunta sobre KDO..."
                 className="w-full bg-zinc-900 border border-zinc-800 rounded-xl py-3 pl-4 pr-12 text-xs text-white focus:outline-none focus:border-red-600 transition-all"
               />
               <button 
@@ -107,7 +107,7 @@ const AIChatBot: React.FC = () => {
           onClick={() => setIsOpen(true)}
           className="bg-red-600 hover:bg-red-700 text-white p-4 rounded-full shadow-2xl transition-all transform hover:scale-110 active:scale-95 group relative"
         >
-          <div className="absolute -top-1 -right-1 bg-white text-red-600 text-[8px] font-black px-1.5 py-0.5 rounded-full animate-pulse">AI</div>
+          <div className="absolute -top-1 -right-1 bg-white text-red-600 text-[8px] font-black px-1.5 py-0.5 rounded-full animate-pulse">KDO</div>
           <MessageSquare size={24} />
         </button>
       )}

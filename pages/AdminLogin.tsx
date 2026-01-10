@@ -13,7 +13,6 @@ const AdminLogin: React.FC = () => {
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Usuarios oficiales solicitados
     const validUsers = [
       { user: 'kdoadmin', pass: 'kdo2026', role: 'admin' },
       { user: 'FRAD 3', pass: 'Frad3.2026', role: 'admin' }
@@ -27,7 +26,7 @@ const AdminLogin: React.FC = () => {
         username: match.user, 
         role: 'admin' 
       });
-      navigate('/Administracion19216811/dashboard');
+      navigate('/AdminKDO/dashboard');
     } else {
       setError('Credenciales incorrectas. Verifique usuario y contraseña.');
     }
@@ -38,10 +37,10 @@ const AdminLogin: React.FC = () => {
       <div className="max-w-md w-full">
         <div className="text-center mb-10">
           <div className="bg-red-600 inline-block p-2 rounded-lg italic font-black text-white text-3xl oswald tracking-tighter mb-4 shadow-[0_0_30px_rgba(220,38,38,0.3)]">
-            SOLO <span className="text-black bg-white px-1 rounded-sm">KARTING</span>
+            ADMIN <span className="text-black bg-white px-1 rounded-sm">KDO</span>
           </div>
-          <h2 className="text-2xl font-black text-white uppercase tracking-tight oswald">Acceso Restringido</h2>
-          <p className="text-zinc-500 mt-2 text-xs font-black uppercase tracking-widest">Federación Regional de Automovilismo Deportivo</p>
+          <h2 className="text-2xl font-black text-white uppercase tracking-tight oswald">Panel de Gestión</h2>
+          <p className="text-zinc-500 mt-2 text-xs font-black uppercase tracking-widest italic">Solo personal autorizado</p>
         </div>
 
         <div className="bg-zinc-900 border border-zinc-800 p-8 rounded-[2rem] shadow-2xl relative overflow-hidden">
@@ -49,28 +48,28 @@ const AdminLogin: React.FC = () => {
           
           <form onSubmit={handleLogin} className="space-y-6">
             <div>
-              <label className="block text-zinc-500 text-[10px] font-black uppercase tracking-widest mb-2 ml-1">Identificador de Usuario</label>
+              <label className="block text-zinc-500 text-[10px] font-black uppercase tracking-widest mb-2 ml-1">Usuario</label>
               <div className="relative group">
                 <UserIcon className="absolute left-4 top-4 text-zinc-600 group-focus-within:text-red-600 transition-colors" size={18} />
                 <input
                   type="text"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
-                  className="w-full bg-zinc-950 border border-zinc-800 rounded-xl py-4 pl-12 pr-4 text-white font-bold focus:outline-none focus:border-red-600 transition-all uppercase placeholder:text-zinc-800"
-                  placeholder="NOMBRE APELLIDO"
+                  className="w-full bg-zinc-950 border border-zinc-800 rounded-xl py-4 pl-12 pr-4 text-white font-bold focus:outline-none focus:border-red-600 transition-all uppercase placeholder:text-zinc-800 text-sm"
+                  placeholder="Usuario KDO"
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-zinc-500 text-[10px] font-black uppercase tracking-widest mb-2 ml-1">Clave de Seguridad</label>
+              <label className="block text-zinc-500 text-[10px] font-black uppercase tracking-widest mb-2 ml-1">Contraseña</label>
               <div className="relative group">
                 <Lock className="absolute left-4 top-4 text-zinc-600 group-focus-within:text-red-600 transition-colors" size={18} />
                 <input
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full bg-zinc-950 border border-zinc-800 rounded-xl py-4 pl-12 pr-4 text-white focus:outline-none focus:border-red-600 transition-all placeholder:text-zinc-800"
+                  className="w-full bg-zinc-950 border border-zinc-800 rounded-xl py-4 pl-12 pr-4 text-white focus:outline-none focus:border-red-600 transition-all placeholder:text-zinc-800 text-sm"
                   placeholder="••••••••"
                 />
               </div>
@@ -87,13 +86,13 @@ const AdminLogin: React.FC = () => {
               type="submit"
               className="w-full bg-red-600 hover:bg-red-700 text-white font-black uppercase py-5 rounded-xl transition-all transform hover:scale-[1.02] shadow-xl shadow-red-600/20 oswald tracking-wider"
             >
-              Autenticar Personal
+              Ingresar al Sistema
             </button>
           </form>
         </div>
         
         <p className="text-center text-zinc-700 text-[8px] font-black uppercase tracking-[0.4em] mt-8">
-          Solo Karting Management System • Cronomax System Compatible
+          SISTEMA DE GESTIÓN OFICIAL KDO • ACCESO RESTRINGIDO
         </p>
       </div>
     </div>

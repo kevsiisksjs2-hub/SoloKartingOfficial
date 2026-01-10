@@ -10,7 +10,7 @@ export const aiService = {
     const chat = ai.chats.create({
       model: 'gemini-3-pro-preview',
       config: {
-        systemInstruction: 'Eres un experto en Karting y asistente de la plataforma Solo Karting. Ayudas a los usuarios con dudas sobre inscripciones, circuitos y reglamentos. Sé conciso y profesional.',
+        systemInstruction: 'Eres un experto en Karting y asistente de la plataforma KDO (Karting Disciplina Oficial). Ayudas a los usuarios con dudas sobre inscripciones oficiales, circuitos federados y reglamentos técnicos KDO. Sé conciso, profesional y directo.',
       }
     });
     
@@ -24,7 +24,7 @@ export const aiService = {
   async extractRankingsFromImage(base64Image: string, mimeType: string) {
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
     
-    const prompt = `Analiza esta planilla de resultados de karting. 
+    const prompt = `Analiza esta planilla de resultados oficial de KDO. 
     Extrae la lista de pilotos con su posición (ranking), número de kart y nombre completo.
     Devuelve ESTRICTAMENTE un arreglo JSON con objetos: {"ranking": número, "number": "string", "name": "string"}.
     IMPORTANTE: Si los nombres están como 'APELLIDO, NOMBRE', dales la vuelta a 'NOMBRE APELLIDO'. 

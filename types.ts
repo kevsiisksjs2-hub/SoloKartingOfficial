@@ -88,9 +88,6 @@ export interface RegistrationLink {
   url: string;
 }
 
-/**
- * Interface representing a race result entry, added to resolve import errors in storageService.ts
- */
 export interface RaceResult {
   id: string;
   category: string;
@@ -110,9 +107,6 @@ export interface RaceResult {
   }[];
 }
 
-/**
- * Interface for the Marketplace module items
- */
 export interface MarketplaceItem {
   id: string;
   title: string;
@@ -121,4 +115,14 @@ export interface MarketplaceItem {
   condition: 'Nuevo' | 'Usado';
   image: string;
   contact: string;
+}
+
+export interface Regulation {
+  id: string;
+  title: string;
+  description: string;
+  fileData: string; // Base64 string del PDF
+  fileName: string;
+  fileSize: string;
+  date: string;
 }

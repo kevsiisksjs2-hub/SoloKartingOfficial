@@ -10,21 +10,18 @@ import Pilotos from './pages/Pilotos';
 import Inscripciones from './pages/Inscripciones';
 import Noticias from './pages/Noticias';
 import Resultados from './pages/Resultados';
+import Reglamentos from './pages/Reglamentos';
 import AdminLogin from './pages/AdminLogin';
 import AdminDashboard from './pages/AdminDashboard';
 import AIChatBot from './components/AIChatBot';
 
 const AppContent: React.FC = () => {
   const location = useLocation();
-  const hideChromeRoutes = [
-    '/Administracion19216811/dashboard'
-  ];
-  
-  const isChromeHidden = hideChromeRoutes.some(route => location.pathname.startsWith(route));
+  const isAdminRoute = location.pathname.startsWith('/AdminKDO');
 
   return (
     <div className="min-h-screen flex flex-col bg-zinc-950">
-      {!isChromeHidden && <Navbar />}
+      {!isAdminRoute && <Navbar />}
       <main className="flex-grow">
         <Routes>
           <Route path="/" element={<Home />} />
@@ -34,12 +31,13 @@ const AppContent: React.FC = () => {
           <Route path="/inscripciones" element={<Inscripciones />} />
           <Route path="/noticias" element={<Noticias />} />
           <Route path="/resultados" element={<Resultados />} />
+          <Route path="/reglamentos" element={<Reglamentos />} />
           
-          <Route path="/Administracion19216811" element={<AdminLogin />} />
-          <Route path="/Administracion19216811/dashboard" element={<AdminDashboard />} />
+          <Route path="/AdminKDO" element={<AdminLogin />} />
+          <Route path="/AdminKDO/dashboard" element={<AdminDashboard />} />
         </Routes>
       </main>
-      {!isChromeHidden && (
+      {!isAdminRoute && (
         <>
           <Footer />
           <AIChatBot />
