@@ -1,11 +1,17 @@
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Menu, X, Radio, Activity, Shield } from 'lucide-react';
+import { storageService } from '../services/storageService';
 
 const Navbar: React.FC = () => {
-  const [isOpen, setIsOpen] = React.useState(false);
+  const [isOpen, setIsOpen] = useState(false);
+  const [streamingUrl, setStreamingUrl] = useState('#');
   const location = useLocation();
+
+  useEffect(() => {
+    setStreamingUrl(storageService.getStreamingUrl());
+  }, []);
 
   const navLinks = [
     { name: 'Inicio', path: '/' },
@@ -56,7 +62,9 @@ const Navbar: React.FC = () => {
                 Crono
               </a>
               <a
-                href="#"
+                href={streamingUrl}
+                target="_blank"
+                rel="noopener noreferrer"
                 className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest bg-red-600 text-white hover:bg-red-700 transition-all shadow-xl shadow-red-600/20"
               >
                 <Radio size={14} className="animate-pulse" />
@@ -69,7 +77,7 @@ const Navbar: React.FC = () => {
           </div>
 
           <div className="lg:hidden flex items-center gap-4">
-             <a href="#" className="p-2 bg-red-600 rounded-lg text-white">
+             <a href={streamingUrl} target="_blank" className="p-2 bg-red-600 rounded-lg text-white">
                 <Radio size={20} className="animate-pulse" />
              </a>
             <button

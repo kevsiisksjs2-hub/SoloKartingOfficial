@@ -3,14 +3,15 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { storageService } from '../services/storageService';
 import { aiService } from '../services/aiService';
-import { Pilot, Championship, Category, TrackFlag, Regulation } from '../types';
+import { Pilot, Championship, Category, TrackFlag, Regulation, Status } from '../types';
 import { 
   Users, LogOut, Trash2, X, Layers, 
-  Trophy, Search, Download, Radio, Settings, 
+  Trophy, Search, Radio, Settings, 
   ImageIcon, Loader2, Sparkles, FileText,
-  Plus, Calendar, MapPin, Filter, FileDown,
+  Plus, Filter, FileDown,
   Activity, Play, Square, Signal, Save, Globe, Flag,
-  FileUp, File
+  FileUp, File, UserPlus, Youtube,
+  FileStack, Printer, CheckCircle, AlertTriangle, Upload
 } from 'lucide-react';
 import { 
   generatePilotsPDF, 
@@ -31,6 +32,13 @@ const AdminDashboard: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('Todas');
   const [currentUser, setCurrentUser] = useState<any>(null);
+  const [toast, setToast] = useState<{message: string, type: 'success' | 'error'} | null>(null);
+
+  // IA Ranking States
+  const [showAIModal, setShowAIModal] = useState(false);
+  const [rankCategory, setRankCategory] = useState('');
+  const [isProcessingAI, setIsProcessingAI] = useState(false);
+  const [aiPreviewData, setAiPreviewData] = useState<any[]>([]);
 
   // Monitor Live States
   const [isLiveConnected, setIsLiveConnected] = useState(false);
@@ -38,7 +46,7 @@ const AdminDashboard: React.FC = () => {
   const [sessionTime, setSessionTime] = useState(0);
 
   // Settings States
-  const [urls, setUrls] = useState({ live: '', history: '' });
+  const [urls, setUrls] = useState({ live: '', history: '', streaming: '' });
   const [newCategory, setNewCategory] = useState('');
   const [trackStatus, setTrackStatus] = useState<TrackFlag>(TrackFlag.VERDE);
 
@@ -56,11 +64,8 @@ const AdminDashboard: React.FC = () => {
   const [regFile, setRegFile] = useState<File | null>(null);
   const [isUploadingReg, setIsUploadingReg] = useState(false);
 
-  // IA Ranking States
-  const [showRankingModal, setShowRankingModal] = useState(false);
-  const [rankCategory, setRankCategory] = useState('');
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [previewData, setPreviewData] = useState<any[]>([]);
+  // Export Modal States
+  const [showExportModal, setShowExportModal] = useState(false);
 
   useEffect(() => {
     const auth = storageService.getAuth();
@@ -69,35 +74,48 @@ const AdminDashboard: React.FC = () => {
     refreshData();
   }, [navigate]);
 
-  // Simulation Logic for Live Monitor
   useEffect(() => {
     let interval: any;
     if (isLiveConnected) {
-      const initialLive = pilots.slice(0, 10).map((p, i) => ({
-        ...p,
-        pos: i + 1,
-        laps: 0,
-        lastLap: '-',
-        bestLap: (48.1 + Math.random() * 2).toFixed(3),
-        gap: i === 0 ? '-' : `+${(i * 0.432).toFixed(3)}`,
-        status: 'Pista'
-      }));
-      setLiveData(initialLive);
+      const activePilots = pilots.filter(p => p.status === Status.CONFIRMADO);
+      if (liveData.length === 0 && activePilots.length > 0) {
+        setLiveData(activePilots.slice(0, 15).map((p, i) => ({
+          ...p,
+          pos: i + 1,
+          laps: 0,
+          lastLap: '-',
+          bestLap: (48.0 + Math.random() * 2).toFixed(3),
+          gap: i === 0 ? '-' : `+${(i * 0.432).toFixed(3)}`,
+          status: 'Pista'
+        })));
+      }
 
       interval = setInterval(() => {
         setSessionTime(prev => prev + 1);
-        setLiveData(prev => prev.map(p => {
-          if (Math.random() > 0.8) {
-            const newLast = (48 + Math.random() * 2).toFixed(3);
-            return {
-              ...p,
-              laps: p.laps + 1,
-              lastLap: newLast,
-              bestLap: parseFloat(newLast) < parseFloat(p.bestLap) ? newLast : p.bestLap
-            };
-          }
-          return p;
-        }).sort((a, b) => b.laps - a.laps || parseFloat(a.bestLap) - parseFloat(b.bestLap)));
+        setLiveData(prev => {
+          const updated = prev.map(p => {
+            if (Math.random() > 0.7) {
+              const lapTime = (47.5 + Math.random() * 3).toFixed(3);
+              const isBest = parseFloat(lapTime) < parseFloat(p.bestLap);
+              return {
+                ...p,
+                laps: p.laps + 1,
+                lastLap: lapTime,
+                bestLap: isBest ? lapTime : p.bestLap
+              };
+            }
+            return p;
+          });
+          
+          return [...updated].sort((a, b) => {
+            if (b.laps !== a.laps) return b.laps - a.laps;
+            return parseFloat(a.bestLap) - parseFloat(b.bestLap);
+          }).map((p, i) => ({
+            ...p,
+            pos: i + 1,
+            gap: i === 0 ? '-' : (updated[i].laps < updated[0].laps ? `+${updated[0].laps - updated[i].laps} Vta` : `+${(i * 0.215).toFixed(3)}`)
+          }));
+        });
       }, 1000);
     } else {
       setSessionTime(0);
@@ -106,8 +124,14 @@ const AdminDashboard: React.FC = () => {
     return () => clearInterval(interval);
   }, [isLiveConnected, pilots]);
 
+  const showNotification = (message: string, type: 'success' | 'error' = 'success') => {
+    setToast({ message, type });
+    setTimeout(() => setToast(null), 3000);
+  };
+
   const refreshData = () => {
-    setPilots(storageService.getPilots());
+    const loadedPilots = storageService.getPilots();
+    setPilots(loadedPilots);
     const loadedCats = storageService.getCategories();
     setCategories(loadedCats);
     if (loadedCats.length > 0) setRankCategory(loadedCats[0]);
@@ -115,16 +139,68 @@ const AdminDashboard: React.FC = () => {
     setRegulations(storageService.getRegulations());
     setUrls({
       live: storageService.getLiveUrl(),
-      history: storageService.getHistoryUrl()
+      history: storageService.getHistoryUrl(),
+      streaming: storageService.getStreamingUrl()
     });
     setTrackStatus(storageService.getTrackStatus());
   };
 
-  const handleLogout = () => { 
-    storageService.setAuth(null); 
-    navigate('/AdminKDO'); 
+  const handleLogout = () => {
+    storageService.setAuth(null);
+    navigate('/AdminKDO');
   };
 
+  const handleDeletePilot = (p: Pilot) => {
+    const confirmMsg = `🚨 ADVERTENCIA DE SEGURIDAD 🚨\n\n¿Está completamente seguro de eliminar al piloto ${p.name.toUpperCase()} (Kart #${p.number})?\n\nEsta acción es ABSOLUTAMENTE IRREVERSIBLE y borrará permanentemente todos los registros del piloto de la base de datos oficial de KDO.`;
+    
+    if (window.confirm(confirmMsg)) {
+      const upd = pilots.filter(x => x.id !== p.id);
+      setPilots(upd);
+      storageService.savePilots(upd);
+      showNotification(`PILOTO ${p.name.toUpperCase()} ELIMINADO DEFINITIVAMENTE`, 'success');
+    }
+  };
+
+  const handleExportPDF = (category: string) => {
+    const title = category === 'Todas' ? 'PLANILLA GENERAL DE INSCRIPTOS' : `INSCRIPTOS - ${category}`;
+    const filtered = category === 'Todas' 
+      ? pilots.filter(p => p.status !== 'Baja')
+      : pilots.filter(p => p.category === category && p.status !== 'Baja');
+    
+    generatePilotsPDF(filtered, title, category === 'Todas' ? undefined : category);
+    showNotification(`PLANILLA ${category.toUpperCase()} GENERADA (2 COLUMNAS)`);
+  };
+
+  // --- IA RANKING LOGIC ---
+  const handleFileUploadIA = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsProcessingAI(true);
+    try {
+      const reader = new FileReader();
+      reader.onload = async () => {
+        const base64 = (reader.result as string).split(',')[1];
+        const data = await aiService.extractRankingsFromImage(base64, file.type);
+        setAiPreviewData(data);
+        setIsProcessingAI(false);
+      };
+      reader.readAsDataURL(file);
+    } catch (err) {
+      showNotification("Error al procesar con IA", "error");
+      setIsProcessingAI(false);
+    }
+  };
+
+  const confirmAIImport = () => {
+    if (!rankCategory) return;
+    storageService.saveCategoryRankings(rankCategory, aiPreviewData);
+    showNotification(`Ranking de ${rankCategory} actualizado con éxito`);
+    setShowAIModal(false);
+    setAiPreviewData([]);
+  };
+
+  // Otros manejadores
   const handleAddChampionship = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newChamp.name) return;
@@ -133,53 +209,66 @@ const AdminDashboard: React.FC = () => {
     setChampionships(updated);
     storageService.saveChampionships(updated);
     setNewChamp({ name: '', status: 'En curso', dates: '', tracks: '', image: 'https://images.unsplash.com/photo-1547631618-f29792042761?w=800' });
+    showNotification('Campeonato creado con éxito');
   };
 
   const deleteChamp = (id: string) => {
-    if (window.confirm('¿Eliminar este campeonato definitivamente?')) {
+    const champ = championships.find(c => c.id === id);
+    const confirmMsg = `🚨 ELIMINACIÓN DE CAMPEONATO 🚨\n\n¿Desea eliminar definitivamente el campeonato "${champ?.name.toUpperCase()}"?\n\nADVERTENCIA: Todos los datos, calendarios y registros asociados a este torneo se perderán de forma permanente. Esta acción no se puede deshacer.`;
+    if (window.confirm(confirmMsg)) {
       const updated = championships.filter(c => c.id !== id);
       setChampionships(updated);
       storageService.saveChampionships(updated);
+      showNotification('Campeonato eliminado permanentemente', 'success');
     }
   };
 
   const handleUploadRegulation = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!regFile || !newReg.title) return;
+    if (!regFile || !newReg.title) { showNotification('Título y Archivo PDF requeridos', 'error'); return; }
     setIsUploadingReg(true);
-    
-    const reader = new FileReader();
-    reader.onload = () => {
-      const base64 = reader.result as string;
-      const fileSize = (regFile.size / 1024 / 1024).toFixed(1) + ' MB';
-      
-      const reg: Regulation = {
-        id: Date.now().toString(),
-        title: newReg.title,
-        description: newReg.description,
-        fileData: base64,
-        fileName: regFile.name,
-        fileSize: fileSize,
-        date: new Date().toLocaleDateString('es-AR')
-      };
-      
-      const updated = [reg, ...regulations];
-      setRegulations(updated);
-      storageService.saveRegulations(updated);
-      setNewReg({ title: '', description: '' });
-      setRegFile(null);
-      setIsUploadingReg(false);
-      alert("Reglamento cargado con éxito.");
-    };
-    reader.readAsDataURL(regFile);
+    try {
+        const reader = new FileReader();
+        reader.onload = () => {
+          const reg: Regulation = {
+            id: Date.now().toString(),
+            title: newReg.title,
+            description: newReg.description,
+            fileData: reader.result as string,
+            fileName: regFile.name,
+            fileSize: (regFile.size / 1024 / 1024).toFixed(1) + ' MB',
+            date: new Date().toLocaleDateString('es-AR')
+          };
+          const updated = [reg, ...regulations];
+          setRegulations(updated);
+          storageService.saveRegulations(updated);
+          setNewReg({ title: '', description: '' });
+          setRegFile(null);
+          setIsUploadingReg(false);
+          showNotification('Reglamento publicado correctamente');
+        };
+        reader.readAsDataURL(regFile);
+    } catch (err) { showNotification('Error al procesar el archivo', 'error'); setIsUploadingReg(false); }
   };
 
+  // Added missing deleteRegulation function
   const deleteRegulation = (id: string) => {
-    if (window.confirm('¿Eliminar este reglamento?')) {
+    const reg = regulations.find(r => r.id === id);
+    const confirmMsg = `🚨 ELIMINACIÓN DE REGLAMENTO 🚨\n\n¿Desea eliminar definitivamente el documento "${reg?.title.toUpperCase()}"?\n\nEsta acción borrará permanentemente el archivo PDF de la base de datos oficial de KDO.`;
+    if (window.confirm(confirmMsg)) {
       const updated = regulations.filter(r => r.id !== id);
       setRegulations(updated);
       storageService.saveRegulations(updated);
+      showNotification('Reglamento eliminado permanentemente', 'success');
     }
+  };
+
+  const handleSaveSettings = () => {
+    storageService.saveLiveUrl(urls.live);
+    storageService.saveHistoryUrl(urls.history);
+    storageService.saveStreamingUrl(urls.streaming);
+    storageService.saveTrackStatus(trackStatus);
+    showNotification('Configuración de sistema actualizada');
   };
 
   const handleAddCategory = () => {
@@ -188,21 +277,7 @@ const AdminDashboard: React.FC = () => {
     setCategories(updated);
     storageService.saveCategories(updated);
     setNewCategory('');
-  };
-
-  const handleDeleteCategory = (cat: string) => {
-    if (window.confirm(`¿Eliminar la categoría ${cat}?`)) {
-      const updated = categories.filter(c => c !== cat);
-      setCategories(updated);
-      storageService.saveCategories(updated);
-    }
-  };
-
-  const handleSaveSettings = () => {
-    storageService.saveLiveUrl(urls.live);
-    storageService.saveHistoryUrl(urls.history);
-    storageService.saveTrackStatus(trackStatus);
-    alert("Configuración guardada correctamente.");
+    showNotification('Categoría añadida');
   };
 
   const filteredPilots = pilots.filter(p => {
@@ -210,39 +285,6 @@ const AdminDashboard: React.FC = () => {
     const matchesCategory = categoryFilter === 'Todas' || p.category === categoryFilter;
     return matchesSearch && matchesCategory;
   });
-
-  const handleExportPDF = () => {
-    const title = categoryFilter === 'Todas' ? 'LISTADO GENERAL DE INSCRIPTOS' : `INSCRIPTOS - ${categoryFilter}`;
-    generatePilotsPDF(filteredPilots, title, categoryFilter === 'Todas' ? undefined : categoryFilter);
-  };
-
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setIsProcessing(true);
-    try {
-      const reader = new FileReader();
-      reader.onload = async () => {
-        const base64 = (reader.result as string).split(',')[1];
-        const extracted = await aiService.extractRankingsFromImage(base64, file.type);
-        setPreviewData(extracted);
-        setIsProcessing(false);
-      };
-      reader.readAsDataURL(file);
-    } catch (err) {
-      alert("Error procesando con IA.");
-      setIsProcessing(false);
-    }
-  };
-
-  const confirmImport = () => {
-    if (previewData.length > 0) {
-      storageService.saveCategoryRankings(rankCategory, previewData);
-      alert(`Ranking de ${rankCategory} actualizado.`);
-      setShowRankingModal(false);
-      setPreviewData([]);
-    }
-  };
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -252,11 +294,19 @@ const AdminDashboard: React.FC = () => {
 
   return (
     <div className="flex h-screen bg-[#050505] text-zinc-300 overflow-hidden font-sans">
-      {/* Sidebar */}
+      {toast && (
+        <div className="fixed top-8 right-8 z-[300] animate-in slide-in-from-right-8 duration-300">
+          <div className={`flex items-center gap-3 px-6 py-4 rounded-2xl shadow-2xl border ${toast.type === 'success' ? 'bg-emerald-950/90 border-emerald-500/30 text-emerald-400' : 'bg-red-950/90 border-red-500/30 text-red-400'} backdrop-blur-xl`}>
+             {toast.type === 'success' ? <CheckCircle size={20} /> : <AlertTriangle size={20} />}
+             <span className="text-[10px] font-black uppercase tracking-widest">{toast.message}</span>
+          </div>
+        </div>
+      )}
+
       <aside className="w-64 bg-[#0a0a0a] border-r border-zinc-800 flex flex-col shrink-0 z-40">
         <div className="p-6 bg-zinc-950 border-b border-zinc-800 mb-4 text-center">
           <div className="bg-red-600 p-1 rounded italic font-black text-white text-xl oswald tracking-tighter mb-2">
-            ADMIN <span className="text-black bg-white px-1 rounded-sm">KDO</span>
+            ADMIN <span className="text-black bg-white px-1 rounded-sm text-sm">KDO</span>
           </div>
           <span className="text-[8px] font-black text-zinc-600 uppercase tracking-[0.3em]">Gestión Federada</span>
         </div>
@@ -290,7 +340,6 @@ const AdminDashboard: React.FC = () => {
         </div>
       </aside>
 
-      {/* Main Content */}
       <main className="flex-grow flex flex-col bg-black overflow-hidden relative">
         <header className="bg-[#0c0c0c] border-b border-zinc-800 h-16 flex items-center px-8 justify-between shrink-0">
           <h2 className="text-xl font-black oswald uppercase text-white tracking-widest italic">{activeTab.toUpperCase().replace('_', ' ')}</h2>
@@ -298,7 +347,6 @@ const AdminDashboard: React.FC = () => {
 
         <div className="flex-grow overflow-auto p-8 custom-scrollbar">
           
-          {/* INSCRIPTOS */}
           {activeTab === 'inscriptos' && (
             <div className="animate-in fade-in duration-300">
               <div className="flex flex-col lg:flex-row justify-between items-center gap-6 mb-8">
@@ -326,12 +374,15 @@ const AdminDashboard: React.FC = () => {
                   </div>
                 </div>
                 
-                <div className="flex gap-4 w-full lg:w-auto">
-                  <button onClick={() => setShowRankingModal(true)} className="flex-grow lg:flex-none bg-emerald-600 text-white px-6 py-3 rounded-2xl font-black uppercase text-[10px] flex items-center justify-center gap-2 shadow-lg shadow-emerald-600/20 hover:bg-emerald-700 transition-all">
-                    <Sparkles size={14} /> Importar Rankings (IA)
+                <div className="flex flex-wrap gap-4 w-full lg:w-auto justify-end">
+                  <button onClick={() => setShowAIModal(true)} className="bg-emerald-600 text-white px-6 py-3 rounded-2xl font-black uppercase text-[10px] flex items-center justify-center gap-2 shadow-lg shadow-emerald-600/20 hover:bg-emerald-700 transition-all">
+                    <Sparkles size={14} /> Importar Ranking IA
                   </button>
-                  <button onClick={handleExportPDF} className="flex-grow lg:flex-none bg-white text-black px-6 py-3 rounded-2xl font-black uppercase text-[10px] flex items-center justify-center gap-2 hover:bg-red-600 hover:text-white transition-all shadow-xl">
-                    <FileDown size={14} /> Descargar {categoryFilter === 'Todas' ? 'General' : categoryFilter}
+                  <button onClick={() => navigate('/AdminKDO/nuevo-piloto')} className="bg-red-600 text-white px-6 py-3 rounded-2xl font-black uppercase text-[10px] flex items-center justify-center gap-2 shadow-lg shadow-red-600/20 hover:bg-red-700 transition-all">
+                    <UserPlus size={14} /> Nuevo Piloto
+                  </button>
+                  <button onClick={() => setShowExportModal(true)} className="bg-white text-black px-6 py-3 rounded-2xl font-black uppercase text-[10px] flex items-center justify-center gap-2 hover:bg-red-600 hover:text-white transition-all shadow-xl">
+                    <FileDown size={14} /> Exportar Planillas
                   </button>
                 </div>
               </div>
@@ -343,27 +394,21 @@ const AdminDashboard: React.FC = () => {
                       <th className="px-8 py-5">#</th>
                       <th className="px-8 py-5">Piloto</th>
                       <th className="px-8 py-5">Categoría</th>
-                      <th className="px-8 py-5">Asociación</th>
+                      <th className="px-8 py-5">Inscripto</th>
                       <th className="px-8 py-5 text-right">Acciones</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-zinc-800/50">
                     {filteredPilots.map(p => (
-                      <tr key={p.id} className="hover:bg-white/5 transition-all">
+                      <tr key={p.id} className="hover:bg-white/5 transition-all group">
                         <td className="px-8 py-5 font-black text-red-600 oswald text-xl italic">#{p.number}</td>
                         <td className="px-8 py-5 text-xs font-black text-white uppercase">{p.name}</td>
                         <td className="px-8 py-5">
                           <span className="text-[9px] font-black uppercase bg-zinc-950 px-2 py-1 rounded text-zinc-400 border border-zinc-800">{p.category}</span>
                         </td>
-                        <td className="px-8 py-5 text-[10px] font-bold text-zinc-500 uppercase">{p.association}</td>
+                        <td className="px-8 py-5 text-[10px] text-zinc-500 font-bold">{p.lastUpdated}</td>
                         <td className="px-8 py-5 text-right">
-                          <button onClick={() => {
-                             if(window.confirm('¿Eliminar piloto del registro?')) {
-                               const upd = pilots.filter(x => x.id !== p.id);
-                               setPilots(upd);
-                               storageService.savePilots(upd);
-                             }
-                          }} className="p-2.5 bg-zinc-950 border border-zinc-800 text-zinc-600 hover:text-red-500 rounded-xl transition-all">
+                          <button onClick={() => handleDeletePilot(p)} className="p-2.5 bg-zinc-950 border border-zinc-800 text-zinc-600 hover:text-red-500 rounded-xl transition-all shadow-lg hover:border-red-600/50">
                             <Trash2 size={14}/>
                           </button>
                         </td>
@@ -375,16 +420,15 @@ const AdminDashboard: React.FC = () => {
             </div>
           )}
 
-          {/* CAMPEONATOS */}
           {activeTab === 'campeonatos' && (
             <div className="animate-in fade-in duration-300 grid grid-cols-1 xl:grid-cols-3 gap-8">
               <div className="xl:col-span-1">
                 <div className="bg-zinc-900 border border-zinc-800 p-8 rounded-[2.5rem] shadow-2xl sticky top-0">
-                  <h3 className="text-xl font-black oswald uppercase text-white mb-8">Nuevo Torneo</h3>
+                  <h3 className="text-xl font-black oswald uppercase text-white mb-8 italic">Nuevo Campeonato</h3>
                   <form onSubmit={handleAddChampionship} className="space-y-6">
-                    <input required type="text" value={newChamp.name} onChange={e => setNewChamp({...newChamp, name: e.target.value})} placeholder="NOMBRE DEL CAMPEONATO" className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-4 text-white font-bold uppercase text-[11px] outline-none focus:border-red-600" />
-                    <input type="text" value={newChamp.dates} onChange={e => setNewChamp({...newChamp, dates: e.target.value})} placeholder="FECHAS (EJ: MAR-DIC)" className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-4 text-white font-bold uppercase text-[11px] outline-none focus:border-red-600" />
-                    <textarea value={newChamp.tracks} onChange={e => setNewChamp({...newChamp, tracks: e.target.value})} placeholder="CIRCUITOS ASOCIADOS" className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-4 text-white font-bold uppercase text-[11px] outline-none h-24 resize-none focus:border-red-600" />
+                    <input required type="text" value={newChamp.name} onChange={e => setNewChamp({...newChamp, name: e.target.value})} placeholder="NOMBRE DEL TORNEO" className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-4 text-white font-bold uppercase text-[11px] outline-none focus:border-red-600" />
+                    <input type="text" value={newChamp.dates} onChange={e => setNewChamp({...newChamp, dates: e.target.value})} placeholder="CALENDARIO (EJ: MAR-DIC)" className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-4 text-white font-bold uppercase text-[11px] outline-none focus:border-red-600" />
+                    <textarea value={newChamp.tracks} onChange={e => setNewChamp({...newChamp, tracks: e.target.value})} placeholder="CIRCUITOS PRINCIPALES" className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-4 text-white font-bold uppercase text-[11px] outline-none h-24 resize-none focus:border-red-600" />
                     <button type="submit" className="w-full bg-red-600 text-white font-black uppercase py-5 rounded-2xl shadow-xl hover:bg-red-700 transition-all">Crear Campeonato</button>
                   </form>
                 </div>
@@ -392,9 +436,14 @@ const AdminDashboard: React.FC = () => {
               <div className="xl:col-span-2 space-y-4">
                 {championships.map(champ => (
                   <div key={champ.id} className="bg-zinc-900 border border-zinc-800 rounded-[2.5rem] p-8 flex justify-between items-center group hover:border-red-600/30 transition-all shadow-xl">
-                    <div>
-                      <h3 className="text-xl font-black oswald uppercase text-white mb-1 italic tracking-tighter">{champ.name}</h3>
-                      <p className="text-zinc-500 text-[9px] uppercase font-bold tracking-widest">{champ.dates} • {champ.tracks}</p>
+                    <div className="flex items-center gap-6">
+                       <div className="bg-zinc-950 p-4 rounded-2xl text-red-600 border border-zinc-800">
+                          <Trophy size={28} />
+                       </div>
+                       <div>
+                          <h3 className="text-xl font-black oswald uppercase text-white mb-1 italic tracking-tighter">{champ.name}</h3>
+                          <p className="text-zinc-500 text-[9px] uppercase font-bold tracking-widest">{champ.dates} • {champ.tracks}</p>
+                       </div>
                     </div>
                     <button onClick={() => deleteChamp(champ.id)} className="p-4 bg-zinc-950 rounded-2xl text-zinc-600 hover:text-red-500 border border-zinc-800 transition-all"><Trash2 size={18} /></button>
                   </div>
@@ -403,17 +452,16 @@ const AdminDashboard: React.FC = () => {
             </div>
           )}
 
-          {/* REGLAMENTOS (NUEVO) */}
           {activeTab === 'reglamentos' && (
             <div className="animate-in fade-in duration-300 grid grid-cols-1 xl:grid-cols-3 gap-8">
                <div className="xl:col-span-1">
                 <div className="bg-zinc-900 border border-zinc-800 p-8 rounded-[2.5rem] shadow-2xl sticky top-0">
-                  <h3 className="text-xl font-black oswald uppercase text-white mb-8 flex items-center gap-2">
-                    <FileUp size={20} className="text-red-600" /> Cargar PDF
+                  <h3 className="text-xl font-black oswald uppercase text-white mb-8 flex items-center gap-2 italic">
+                    <FileUp size={20} className="text-red-600" /> Publicar PDF
                   </h3>
                   <form onSubmit={handleUploadRegulation} className="space-y-6">
-                    <input required type="text" value={newReg.title} onChange={e => setNewReg({...newReg, title: e.target.value})} placeholder="TÍTULO REGLAMENTO" className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-4 text-white font-bold uppercase text-[11px] outline-none focus:border-red-600" />
-                    <textarea value={newReg.description} onChange={e => setNewReg({...newReg, description: e.target.value})} placeholder="BREVE DESCRIPCIÓN" className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-4 text-white font-bold uppercase text-[11px] outline-none h-20 resize-none focus:border-red-600" />
+                    <input required type="text" value={newReg.title} onChange={e => setNewReg({...newReg, title: e.target.value})} placeholder="TÍTULO DEL DOCUMENTO" className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-4 text-white font-bold uppercase text-[11px] outline-none focus:border-red-600" />
+                    <textarea value={newReg.description} onChange={e => setNewReg({...newReg, description: e.target.value})} placeholder="BREVE DESCRIPCIÓN (OPCIONAL)" className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-4 text-white font-bold uppercase text-[11px] outline-none h-20 resize-none focus:border-red-600" />
                     
                     <label className="w-full flex items-center justify-center gap-3 bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-8 text-zinc-500 font-black text-[10px] uppercase cursor-pointer hover:border-red-600 transition-all border-dashed">
                       <File size={20} /> {regFile ? regFile.name : 'SELECCIONAR ARCHIVO PDF'}
@@ -421,7 +469,7 @@ const AdminDashboard: React.FC = () => {
                     </label>
 
                     <button disabled={!regFile || isUploadingReg} type="submit" className="w-full bg-white text-black font-black uppercase py-5 rounded-2xl shadow-xl hover:bg-red-600 hover:text-white transition-all disabled:opacity-30">
-                      {isUploadingReg ? 'Procesando...' : 'Cargar Reglamento'}
+                      {isUploadingReg ? 'Subiendo...' : 'Publicar Reglamento'}
                     </button>
                   </form>
                 </div>
@@ -441,26 +489,19 @@ const AdminDashboard: React.FC = () => {
                     <button onClick={() => deleteRegulation(reg.id)} className="p-4 bg-zinc-950 rounded-2xl text-zinc-600 hover:text-red-500 border border-zinc-800 transition-all"><Trash2 size={18} /></button>
                   </div>
                 ))}
-                {regulations.length === 0 && (
-                   <div className="py-24 text-center bg-zinc-900/50 border border-dashed border-zinc-800 rounded-[3rem]">
-                    <FileText size={48} className="text-zinc-800 mx-auto mb-4 opacity-20" />
-                    <p className="text-zinc-600 text-[10px] font-black uppercase tracking-widest">No hay reglamentos cargados.</p>
-                  </div>
-                )}
               </div>
             </div>
           )}
 
-          {/* MONITOR LIVE */}
           {activeTab === 'live_feed' && (
             <div className="animate-in fade-in duration-300 space-y-8">
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 <div className="bg-zinc-900 border border-zinc-800 p-8 rounded-[2rem] flex items-center justify-between shadow-xl">
                   <div>
-                    <p className="text-[9px] font-black text-zinc-500 uppercase tracking-widest mb-1">Decodificador KDO</p>
+                    <p className="text-[9px] font-black text-zinc-500 uppercase tracking-widest mb-1">Race Control Simulator</p>
                     <div className="flex items-center gap-2">
                        <div className={`w-3 h-3 rounded-full ${isLiveConnected ? 'bg-emerald-500 animate-pulse' : 'bg-red-600'}`}></div>
-                       <p className="text-xl font-black text-white uppercase oswald">{isLiveConnected ? 'VIVO' : 'OFFLINE'}</p>
+                       <p className="text-xl font-black text-white uppercase oswald">{isLiveConnected ? 'TRANSMITIENDO' : 'OFFLINE'}</p>
                     </div>
                   </div>
                   <button 
@@ -474,21 +515,25 @@ const AdminDashboard: React.FC = () => {
                 <div className="bg-zinc-900 border border-zinc-800 p-8 rounded-[2rem] flex items-center gap-6 shadow-xl">
                    <div className="bg-zinc-950 p-4 rounded-2xl text-red-600 border border-zinc-800"><Signal size={24} /></div>
                    <div>
-                      <p className="text-[9px] font-black text-zinc-500 uppercase tracking-widest mb-1">Protocolo KDO-Net</p>
-                      <p className="text-xl font-black text-white uppercase oswald tracking-tighter">UDP 16000 Sincronizado</p>
+                      <p className="text-[9px] font-black text-zinc-500 uppercase tracking-widest mb-1">Canal de Datos</p>
+                      <p className="text-xl font-black text-white uppercase oswald tracking-tighter">UDP Protocol Sincronizado</p>
                    </div>
                 </div>
 
                 <div className="bg-zinc-900 border border-zinc-800 p-8 rounded-[2rem] flex items-center gap-6 shadow-xl">
                    <div className="bg-zinc-950 p-4 rounded-2xl text-blue-500 border border-zinc-800"><Activity size={24} /></div>
                    <div>
-                      <p className="text-[9px] font-black text-zinc-500 uppercase tracking-widest mb-1">Temporizador Sesión</p>
+                      <p className="text-[9px] font-black text-zinc-500 uppercase tracking-widest mb-1">Duración Sesión</p>
                       <p className="text-xl font-black text-white tabular-nums oswald tracking-tighter">{formatTime(sessionTime)}</p>
                    </div>
                 </div>
               </div>
 
               <div className="bg-zinc-900 border border-zinc-800 rounded-[2.5rem] overflow-hidden shadow-2xl">
+                <div className="bg-zinc-950 p-4 px-8 border-b border-zinc-800 flex justify-between items-center">
+                  <span className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Timing Live Preview (Simulado)</span>
+                  <div className={`w-2 h-2 rounded-full ${isLiveConnected ? 'bg-emerald-500 animate-pulse' : 'bg-zinc-800'}`}></div>
+                </div>
                 <table className="w-full text-left font-mono">
                   <thead className="bg-zinc-950 border-b border-zinc-800 text-zinc-600 text-[8px] font-black uppercase tracking-widest">
                     <tr>
@@ -513,11 +558,9 @@ const AdminDashboard: React.FC = () => {
                         <td className="px-8 py-3 text-right text-zinc-600 text-[10px]">{row.gap}</td>
                       </tr>
                     ))}
-                    {!isLiveConnected && (
+                    {liveData.length === 0 && (
                       <tr>
-                        <td colSpan={7} className="py-24 text-center text-zinc-700 text-[10px] font-black uppercase tracking-widest">
-                          Conecte el decodificador oficial KDO para recibir datos
-                        </td>
+                        <td colSpan={7} className="py-20 text-center text-zinc-700 text-[10px] font-black uppercase">Active el monitor para iniciar simulación de carrera</td>
                       </tr>
                     )}
                   </tbody>
@@ -526,48 +569,60 @@ const AdminDashboard: React.FC = () => {
             </div>
           )}
 
-          {/* AJUSTES */}
           {activeTab === 'ajustes' && (
             <div className="animate-in fade-in duration-300 space-y-10">
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
                 <div className="bg-zinc-900 border border-zinc-800 p-10 rounded-[3rem] shadow-2xl">
                   <h3 className="text-xl font-black oswald uppercase text-white mb-8 flex items-center gap-3 italic">
-                    <Globe size={20} className="text-red-600" /> Integración Cronometraje
+                    <Globe size={20} className="text-red-600" /> Centro de Enlaces
                   </h3>
                   <div className="space-y-6">
                     <div>
-                      <label className="text-[9px] font-black text-zinc-500 uppercase tracking-widest block mb-2 ml-1">URL Mylaps Live</label>
-                      <input type="text" value={urls.live} onChange={e => setUrls({...urls, live: e.target.value})} className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-6 py-4 text-white text-[11px] font-bold outline-none focus:border-red-600" />
+                      <label className="text-[9px] font-black text-zinc-500 uppercase tracking-widest block mb-2 ml-1">URL Mylaps Live Timing</label>
+                      <input type="text" value={urls.live} onChange={e => setUrls({...urls, live: e.target.value})} className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-6 py-4 text-white text-[11px] font-bold outline-none focus:border-red-600 transition-all" />
                     </div>
                     <div>
-                      <label className="text-[9px] font-black text-zinc-500 uppercase tracking-widest block mb-2 ml-1">URL Historial Resultados</label>
-                      <input type="text" value={urls.history} onChange={e => setUrls({...urls, history: e.target.value})} className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-6 py-4 text-white text-[11px] font-bold outline-none focus:border-red-600" />
+                      <label className="text-[9px] font-black text-zinc-500 uppercase tracking-widest block mb-2 ml-1">URL Archivo Histórico</label>
+                      <input type="text" value={urls.history} onChange={e => setUrls({...urls, history: e.target.value})} className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-6 py-4 text-white text-[11px] font-bold outline-none focus:border-red-600 transition-all" />
+                    </div>
+                    <div>
+                      <label className="text-[9px] font-black text-zinc-500 uppercase tracking-widest block mb-2 ml-1 flex items-center gap-2">
+                        <Youtube size={12} className="text-red-600" /> Canal de YouTube (Streaming)
+                      </label>
+                      <input 
+                        type="text" 
+                        value={urls.streaming} 
+                        onChange={e => setUrls({...urls, streaming: e.target.value})} 
+                        placeholder="https://youtube.com/@KDOoficial" 
+                        className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-6 py-4 text-white text-[11px] font-bold outline-none focus:border-red-600 transition-all" 
+                      />
                     </div>
                   </div>
                 </div>
 
                 <div className="bg-zinc-900 border border-zinc-800 p-10 rounded-[3rem] shadow-2xl">
                   <h3 className="text-xl font-black oswald uppercase text-white mb-8 flex items-center gap-3 italic">
-                    <Flag size={20} className="text-red-600" /> Protocolo de Pista
+                    <Flag size={20} className="text-red-600" /> Estado de Circuito
                   </h3>
                   <div className="grid grid-cols-2 gap-4">
                     {[TrackFlag.VERDE, TrackFlag.AMARILLA, TrackFlag.ROJA, TrackFlag.AZUL, TrackFlag.CUADROS].map(flag => (
                       <button 
                         key={flag}
                         onClick={() => setTrackStatus(flag)}
-                        className={`py-4 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border ${trackStatus === flag ? 'bg-white text-black border-white shadow-lg' : 'bg-zinc-950 text-zinc-600 border-zinc-800 hover:border-zinc-700'}`}
+                        className={`py-4 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border ${trackStatus === flag ? 'bg-white text-black border-white shadow-lg shadow-white/5 scale-[1.02]' : 'bg-zinc-950 text-zinc-600 border-zinc-800 hover:border-zinc-700'}`}
                       >
                         {flag}
                       </button>
                     ))}
                   </div>
+                  <p className="text-[8px] text-zinc-600 uppercase mt-6 font-bold italic">* El estado de la bandera se refleja en tiempo real en los monitores públicos.</p>
                 </div>
               </div>
 
               <div className="bg-zinc-900 border border-zinc-800 p-10 rounded-[3rem] shadow-2xl">
                 <div className="flex justify-between items-center mb-10">
                   <h3 className="text-xl font-black oswald uppercase text-white flex items-center gap-3 italic">
-                    <Layers size={20} className="text-red-600" /> Categorías Federadas
+                    <Layers size={20} className="text-red-600" /> Categorías de la Asociación
                   </h3>
                   <div className="flex gap-4">
                     <input type="text" value={newCategory} onChange={e => setNewCategory(e.target.value)} placeholder="NUEVA CATEGORÍA..." className="bg-zinc-950 border border-zinc-800 rounded-xl px-6 py-3 text-white text-[10px] font-bold outline-none uppercase focus:border-emerald-600" />
@@ -578,75 +633,130 @@ const AdminDashboard: React.FC = () => {
                   {categories.map(cat => (
                     <div key={cat} className="bg-zinc-950 border border-zinc-800 p-5 rounded-2xl flex justify-between items-center group hover:border-red-600/30 transition-all">
                       <span className="text-[10px] font-black uppercase text-zinc-400">{cat}</span>
-                      <button onClick={() => handleDeleteCategory(cat)} className="text-zinc-800 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all"><X size={14}/></button>
                     </div>
                   ))}
                 </div>
               </div>
 
-              <div className="flex justify-end">
+              <div className="flex justify-end pb-12">
                  <button onClick={handleSaveSettings} className="bg-red-600 hover:bg-red-700 text-white px-12 py-5 rounded-2xl font-black uppercase text-xs shadow-2xl flex items-center gap-3 transition-all transform hover:scale-[1.02]">
-                    <Save size={18} /> Guardar Configuración KDO
+                    <Save size={18} /> Aplicar Todos los Cambios
                  </button>
               </div>
             </div>
           )}
-
         </div>
       </main>
 
-      {/* MODAL SCANNER RANKING IA */}
-      {showRankingModal && (
-        <div className="fixed inset-0 z-[150] flex items-center justify-center p-6 bg-black/95 backdrop-blur-md">
-          <div className="bg-zinc-900 w-full max-w-2xl rounded-[3rem] border border-zinc-800 p-10 shadow-2xl relative">
-            <button onClick={() => setShowRankingModal(false)} className="absolute top-8 right-8 text-zinc-500 hover:text-white bg-zinc-950 p-2 rounded-full"><X size={24} /></button>
-            <div className="flex items-center gap-4 mb-8">
-               <div className="bg-emerald-600 p-3 rounded-2xl shadow-lg"><Sparkles className="text-white" size={24} /></div>
-               <h3 className="text-2xl font-black oswald uppercase text-white italic">Scanner Inteligente de Rankings</h3>
-            </div>
-            <div className="space-y-6">
-               <div className="grid grid-cols-2 gap-6">
-                  <div>
-                    <label className="text-[10px] font-black text-zinc-500 uppercase tracking-widest mb-3 block">Categoría Destino</label>
-                    <select value={rankCategory} onChange={e => setRankCategory(e.target.value)} className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-6 py-4 text-white font-bold uppercase outline-none text-xs focus:border-emerald-600 cursor-pointer">
-                      {categories.map(c => <option key={c} value={c}>{c}</option>)}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="text-[10px] font-black text-zinc-500 uppercase tracking-widest mb-3 block">Subir Planilla</label>
-                    <label className="w-full flex items-center justify-center gap-3 bg-zinc-950 border border-zinc-800 rounded-xl px-6 py-4 text-zinc-400 font-bold text-xs uppercase cursor-pointer hover:border-emerald-600 transition-all border-dashed">
-                      <ImageIcon size={18} /> Seleccionar Imagen
-                      <input type="file" accept="image/*,application/pdf" className="hidden" onChange={handleFileUpload} />
-                    </label>
-                  </div>
-               </div>
-               <div className="bg-zinc-950 border border-zinc-800 rounded-2xl h-80 overflow-y-auto p-6 relative custom-scrollbar">
-                  {isProcessing ? (
-                    <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 bg-black/50 backdrop-blur-sm">
-                       <Loader2 className="animate-spin text-emerald-500" size={48} />
-                       <p className="text-[10px] font-black text-emerald-500 uppercase tracking-widest">IA Procesando Planilla...</p>
-                    </div>
-                  ) : previewData.length > 0 ? (
-                    <table className="w-full text-left">
-                       <thead className="text-[8px] font-black text-zinc-600 uppercase border-b border-zinc-800">
-                          <tr><th className="pb-3">Pos</th><th className="pb-3">Kart</th><th className="pb-3">Nombre</th></tr>
-                       </thead>
-                       <tbody className="divide-y divide-zinc-900">
-                          {previewData.map((row, i) => (
-                             <tr key={i} className="text-xs font-bold text-zinc-300"><td className="py-2 text-emerald-500">{row.ranking}</td><td className="py-2">#{row.number}</td><td className="py-2 uppercase">{row.name}</td></tr>
-                          ))}
-                       </tbody>
-                    </table>
-                  ) : (
-                    <div className="h-full flex flex-col items-center justify-center text-zinc-700 gap-4">
-                      <FileText size={48} />
-                      <p className="text-[9px] font-black uppercase tracking-widest">Sin datos para previsualizar</p>
-                    </div>
-                  )}
-               </div>
-               <button disabled={previewData.length === 0} onClick={confirmImport} className="w-full bg-white text-black hover:bg-emerald-600 hover:text-white disabled:opacity-30 py-5 rounded-2xl font-black uppercase text-xs transition-all shadow-xl tracking-widest">Confirmar Importación</button>
-            </div>
-          </div>
+      {/* IA Ranking Import Modal */}
+      {showAIModal && (
+        <div className="fixed inset-0 z-[250] flex items-center justify-center p-6 bg-black/95 backdrop-blur-xl animate-in fade-in duration-300">
+           <div className="bg-zinc-900 w-full max-w-4xl rounded-[3rem] border border-zinc-800 p-12 shadow-2xl relative flex flex-col max-h-[90vh]">
+              <button onClick={() => { setShowAIModal(false); setAiPreviewData([]); }} className="absolute top-10 right-10 text-zinc-500 hover:text-white transition-colors bg-zinc-950 p-2 rounded-full"><X size={24}/></button>
+              
+              <div className="flex items-center gap-6 mb-12">
+                 <div className="bg-emerald-600 p-4 rounded-[1.5rem] shadow-xl shadow-emerald-600/20"><Sparkles className="text-white" size={32} /></div>
+                 <div>
+                    <h3 className="text-3xl font-black oswald uppercase text-white italic tracking-tighter">Importación de Ranking IA</h3>
+                    <p className="text-[10px] font-black text-zinc-500 uppercase tracking-widest">Escanee planillas para automatizar inscripciones inteligentes</p>
+                 </div>
+              </div>
+
+              {!aiPreviewData.length ? (
+                <div className="flex-grow flex flex-col items-center justify-center space-y-10">
+                   <div className="w-full max-w-md space-y-4">
+                      <label className="text-[9px] font-black text-zinc-600 uppercase tracking-widest block ml-2">1. Seleccione Categoría de Destino</label>
+                      <select value={rankCategory} onChange={e => setRankCategory(e.target.value)} className="w-full bg-zinc-950 border border-zinc-800 rounded-2xl py-5 px-6 text-white font-bold uppercase outline-none focus:border-emerald-600 appearance-none cursor-pointer">
+                         {categories.map(c => <option key={c} value={c}>{c}</option>)}
+                      </select>
+                   </div>
+
+                   <div className="w-full max-w-md">
+                      <label className="text-[9px] font-black text-zinc-600 uppercase tracking-widest block mb-4 ml-2 text-center">2. Suba una foto de la planilla</label>
+                      <label className="flex flex-col items-center justify-center w-full h-64 bg-zinc-950 border-2 border-dashed border-zinc-800 rounded-[2.5rem] cursor-pointer hover:border-emerald-600 transition-all group overflow-hidden relative">
+                         {isProcessingAI ? (
+                           <div className="flex flex-col items-center gap-4">
+                              <Loader2 size={48} className="text-emerald-500 animate-spin" />
+                              <p className="text-[10px] font-black uppercase text-emerald-500 tracking-[0.3em] animate-pulse">Analizando Datos...</p>
+                           </div>
+                         ) : (
+                           <div className="flex flex-col items-center gap-4">
+                              <Upload size={48} className="text-zinc-800 group-hover:text-emerald-500 transition-colors" />
+                              <p className="text-[10px] font-black uppercase text-zinc-600 group-hover:text-white tracking-widest">Haga clic o arrastre imagen</p>
+                              <span className="text-[8px] text-zinc-700 font-bold uppercase tracking-tighter">Formatos soportados: JPG, PNG, PDF</span>
+                           </div>
+                         )}
+                         <input type="file" className="hidden" accept="image/*" onChange={handleFileUploadIA} disabled={isProcessingAI} />
+                      </label>
+                   </div>
+                </div>
+              ) : (
+                <div className="flex-grow flex flex-col overflow-hidden">
+                   <div className="flex justify-between items-center mb-6">
+                      <h4 className="text-xs font-black uppercase text-emerald-500 tracking-widest flex items-center gap-2">
+                        <CheckCircle size={14} /> Vista Previa de Datos Extraídos ({aiPreviewData.length} Pilotos)
+                      </h4>
+                      <button onClick={() => setAiPreviewData([])} className="text-[8px] font-black text-zinc-600 uppercase hover:text-red-500 transition-colors">Volver a escanear</button>
+                   </div>
+
+                   <div className="flex-grow overflow-y-auto border border-zinc-800 rounded-3xl bg-zinc-950 custom-scrollbar mb-8">
+                      <table className="w-full text-left">
+                         <thead className="bg-zinc-900 border-b border-zinc-800 text-zinc-600 text-[8px] font-black uppercase tracking-widest sticky top-0">
+                            <tr>
+                               <th className="px-8 py-4">Rank</th>
+                               <th className="px-8 py-4">Kart</th>
+                               <th className="px-8 py-4">Nombre</th>
+                            </tr>
+                         </thead>
+                         <tbody className="divide-y divide-zinc-900">
+                            {aiPreviewData.map((p, i) => (
+                              <tr key={i} className="hover:bg-white/5 transition-colors">
+                                 <td className="px-8 py-4 font-black text-zinc-500 oswald">{p.ranking}</td>
+                                 <td className="px-8 py-4 font-black text-red-500">#{p.number}</td>
+                                 <td className="px-8 py-4 text-[10px] font-bold uppercase text-white">{p.name}</td>
+                              </tr>
+                            ))}
+                         </tbody>
+                      </table>
+                   </div>
+
+                   <div className="flex justify-end gap-4 pb-4">
+                      <button onClick={() => setShowAIModal(false)} className="px-8 py-4 rounded-2xl font-black uppercase text-[10px] text-zinc-600 hover:text-white transition-colors">Descartar</button>
+                      <button onClick={confirmAIImport} className="bg-emerald-600 hover:bg-emerald-700 text-white px-10 py-4 rounded-2xl font-black uppercase text-xs shadow-xl flex items-center gap-3 transition-all transform hover:scale-[1.02]">
+                         <Save size={18} /> Confirmar Importación a {rankCategory}
+                      </button>
+                   </div>
+                </div>
+              )}
+           </div>
+        </div>
+      )}
+
+      {/* Export Modal */}
+      {showExportModal && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-6 bg-black/95 backdrop-blur-md animate-in fade-in duration-300">
+           <div className="bg-zinc-900 w-full max-w-xl rounded-[3rem] border border-zinc-800 p-10 shadow-2xl relative">
+              <button onClick={() => setShowExportModal(false)} className="absolute top-8 right-8 text-zinc-500 hover:text-white bg-zinc-950 p-2 rounded-full transition-all"><X size={24} /></button>
+              <div className="flex items-center gap-4 mb-10">
+                 <div className="bg-red-600 p-3 rounded-2xl shadow-xl shadow-red-600/20"><Printer className="text-white" size={24} /></div>
+                 <div>
+                    <h3 className="text-2xl font-black oswald uppercase text-white italic">Centro de Exportación</h3>
+                    <p className="text-[10px] font-black text-zinc-600 uppercase tracking-widest">Seleccione la categoría para generar la planilla oficial KDO</p>
+                 </div>
+              </div>
+              <div className="grid grid-cols-1 gap-3 max-h-80 overflow-y-auto pr-4 custom-scrollbar mb-8">
+                 <button onClick={() => { handleExportPDF('Todas'); setShowExportModal(false); }} className="w-full bg-zinc-950 border border-zinc-800 hover:border-red-600 p-5 rounded-2xl text-left flex justify-between items-center group transition-all">
+                    <span className="text-xs font-black uppercase text-white">Planilla General (Todas las Cat.)</span>
+                    <FileDown size={18} className="text-zinc-700 group-hover:text-red-600" />
+                 </button>
+                 {categories.map(cat => (
+                   <button key={cat} onClick={() => { handleExportPDF(cat); setShowExportModal(false); }} className="w-full bg-zinc-950 border border-zinc-800 hover:border-red-600 p-5 rounded-2xl text-left flex justify-between items-center group transition-all">
+                      <span className="text-xs font-black uppercase text-white">Inscripciones {cat}</span>
+                      <FileDown size={18} className="text-zinc-700 group-hover:text-red-600" />
+                   </button>
+                 ))}
+              </div>
+           </div>
         </div>
       )}
     </div>

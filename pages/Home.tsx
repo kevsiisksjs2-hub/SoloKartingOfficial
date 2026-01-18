@@ -17,9 +17,11 @@ import {
 
 const Home: React.FC = () => {
   const [categories, setCategories] = useState<string[]>([]);
+  const [streamingUrl, setStreamingUrl] = useState('#');
   
   useEffect(() => {
     setCategories(storageService.getCategories());
+    setStreamingUrl(storageService.getStreamingUrl());
   }, []);
 
   const sponsors = [
@@ -52,14 +54,14 @@ const Home: React.FC = () => {
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           
-          <a href="#" className="group bg-zinc-900/50 border border-zinc-800 p-8 rounded-[2.5rem] shadow-2xl transition-all hover:border-red-600 hover:bg-zinc-900">
+          <a href={streamingUrl} target="_blank" rel="noopener noreferrer" className="group bg-zinc-900/50 border border-zinc-800 p-8 rounded-[2.5rem] shadow-2xl transition-all hover:border-red-600 hover:bg-zinc-900">
             <Radio className="text-red-600 mb-6 group-hover:scale-110 transition-transform" size={32} />
             <h3 className="text-xl font-black oswald uppercase text-white mb-2 italic">KDO Streaming</h3>
             <p className="text-zinc-500 text-[10px] font-bold uppercase mb-6 leading-relaxed">Transmisión oficial de todas las series y finales fiscalizadas.</p>
             <span className="text-[9px] font-black text-red-500 uppercase tracking-widest flex items-center gap-2">Ir al canal <ChevronRight size={14} /></span>
           </a>
 
-          <a href="https://speedhive.mylaps.com/LiveTiming" target="_blank" className="group bg-zinc-900/50 border border-zinc-800 p-8 rounded-[2.5rem] shadow-2xl transition-all hover:border-emerald-600 hover:bg-zinc-900">
+          <a href="https://speedhive.mylaps.com/LiveTiming" target="_blank" rel="noopener noreferrer" className="group bg-zinc-900/50 border border-zinc-800 p-8 rounded-[2.5rem] shadow-2xl transition-all hover:border-emerald-600 hover:bg-zinc-900">
             <Activity className="text-emerald-500 mb-6 group-hover:scale-110 transition-transform" size={32} />
             <h3 className="text-xl font-black oswald uppercase text-white mb-2 italic">KDO Live Timing</h3>
             <p className="text-zinc-500 text-[10px] font-bold uppercase mb-6 leading-relaxed">Cronometraje federado en vivo integrado con Mylaps.</p>

@@ -30,7 +30,7 @@ export interface Pilot {
   category: Category;
   status: Status;
   ranking: number;
-  association: string;
+  association?: string; // Ahora es opcional
   lastUpdated: string;
   medicalLicense: string;
   sportsLicense: string;

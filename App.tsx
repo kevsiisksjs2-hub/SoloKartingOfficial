@@ -13,6 +13,7 @@ import Resultados from './pages/Resultados';
 import Reglamentos from './pages/Reglamentos';
 import AdminLogin from './pages/AdminLogin';
 import AdminDashboard from './pages/AdminDashboard';
+import AdminNewPilot from './pages/AdminNewPilot';
 import AIChatBot from './components/AIChatBot';
 
 const AppContent: React.FC = () => {
@@ -35,6 +36,7 @@ const AppContent: React.FC = () => {
           
           <Route path="/AdminKDO" element={<AdminLogin />} />
           <Route path="/AdminKDO/dashboard" element={<AdminDashboard />} />
+          <Route path="/AdminKDO/nuevo-piloto" element={<AdminNewPilot />} />
         </Routes>
       </main>
       {!isAdminRoute && (

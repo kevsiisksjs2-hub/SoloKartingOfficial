@@ -3,8 +3,8 @@ import React, { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { storageService } from '../services/storageService';
 import { Pilot, Status } from '../types';
-// Added missing Users icon from lucide-react
-import { Search, Trophy, ShieldAlert, Award, Star, X, Filter, Users } from 'lucide-react';
+import { Search, Trophy, ShieldAlert, Award, Star, X, Filter, Users, FileDown } from 'lucide-react';
+import { generatePilotsPDF } from '../utils/pdfGenerator';
 
 const Pilotos: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -33,6 +33,11 @@ const Pilotos: React.FC = () => {
       searchParams.set('category', cat);
     }
     setSearchParams(searchParams);
+  };
+
+  const handleDownloadPDF = () => {
+    const title = categoryFilter === 'Todas' ? 'LISTADO GENERAL DE INSCRIPTOS' : `INSCRIPTOS - ${categoryFilter}`;
+    generatePilotsPDF(filteredPilots, title, categoryFilter === 'Todas' ? undefined : categoryFilter);
   };
 
   return (
@@ -66,6 +71,15 @@ const Pilotos: React.FC = () => {
                 {categories.map(c => <option key={c} value={c}>{c}</option>)}
               </select>
             </div>
+
+            <button 
+              onClick={handleDownloadPDF}
+              className="bg-white text-black hover:bg-red-600 hover:text-white px-8 py-4 rounded-2xl font-black uppercase text-[10px] tracking-widest transition-all flex items-center justify-center gap-2 shadow-2xl"
+              title="Descargar Planilla Oficial"
+            >
+              <FileDown size={18} />
+              <span>PDF</span>
+            </button>
           </div>
         </div>
 
@@ -109,7 +123,6 @@ const Pilotos: React.FC = () => {
           
           {filteredPilots.length === 0 && (
             <div className="col-span-full py-32 text-center bg-zinc-900/30 border-2 border-dashed border-zinc-900 rounded-[3rem]">
-               {/* Fixed: Use the imported Users icon */}
                <Users size={64} className="text-zinc-800 mx-auto mb-6 opacity-20" />
                <p className="text-zinc-600 font-black uppercase tracking-widest text-xs">No se encontraron pilotos con los filtros seleccionados</p>
                <button onClick={() => handleCategoryChange('Todas')} className="mt-4 text-red-500 font-black uppercase text-[10px] underline">Limpiar filtros</button>

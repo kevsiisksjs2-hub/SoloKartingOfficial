@@ -15,6 +15,7 @@ const KEYS = {
   LINKS: 'sk_links',
   LIVE_RESULTS_URL: 'sk_live_url',
   HISTORY_RESULTS_URL: 'sk_history_url',
+  STREAMING_URL: 'sk_streaming_url',
   RANKINGS_PREFIX: 'sk_ranking_',
   MARKETPLACE: 'sk_marketplace',
   REGULATIONS: 'sk_regulations',
@@ -53,6 +54,12 @@ export const storageService = {
   },
   saveHistoryUrl: (url: string) => {
     localStorage.setItem(KEYS.HISTORY_RESULTS_URL, url);
+  },
+  getStreamingUrl: (): string => {
+    return localStorage.getItem(KEYS.STREAMING_URL) || 'https://www.youtube.com/@KDOoficial';
+  },
+  saveStreamingUrl: (url: string) => {
+    localStorage.setItem(KEYS.STREAMING_URL, url);
   },
   getTrackStatus: (): TrackFlag => {
     return (localStorage.getItem(KEYS.TRACK_STATUS) as TrackFlag) || TrackFlag.VERDE;

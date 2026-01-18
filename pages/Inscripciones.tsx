@@ -16,7 +16,6 @@ import {
 
 const Inscripciones: React.FC = () => {
   const [categories, setCategories] = useState<Category[]>([]);
-  const [associations, setAssociations] = useState<Association[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   
@@ -27,7 +26,6 @@ const Inscripciones: React.FC = () => {
     name: '',
     number: '',
     ranking: '',
-    association: '',
     medicalLicense: '',
     sportsLicense: ''
   });
@@ -37,10 +35,8 @@ const Inscripciones: React.FC = () => {
 
   useEffect(() => {
     setCategories(storageService.getCategories());
-    setAssociations(storageService.getAssociations());
   }, []);
 
-  // Inteligencia de autocompletado basada en el ranking de la categoría elegida
   useEffect(() => {
     if (step === 2 && formData.name.length > 4) {
       const categoryRankings = storageService.getCategoryRankings(selectedCategory);
@@ -55,7 +51,6 @@ const Inscripciones: React.FC = () => {
           number: match.number 
         }));
         setIsAutoValidated(true);
-        // Limpiar errores automáticos si se encuentra match
         setErrors(prev => ({ ...prev, name: '', number: '', ranking: '' }));
       } else {
         setIsAutoValidated(false);
@@ -103,7 +98,6 @@ const Inscripciones: React.FC = () => {
       category: selectedCategory,
       status: Status.PENDIENTE,
       ranking: parseInt(formData.ranking) || 99,
-      association: formData.association || (associations.length > 0 ? associations[0].name : 'Asociación Local'),
       medicalLicense: formData.medicalLicense,
       sportsLicense: formData.sportsLicense,
       transponderId: `TX-${formData.number}`,
@@ -119,7 +113,7 @@ const Inscripciones: React.FC = () => {
       setShowForm(false); 
       setSubmitted(false); 
       setStep(1); 
-      setFormData({name: '', number: '', ranking: '', association: '', medicalLicense: '', sportsLicense: ''}); 
+      setFormData({name: '', number: '', ranking: '', medicalLicense: '', sportsLicense: ''}); 
       setErrors({});
     }, 2500);
   };
