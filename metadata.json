@@ -1,5 +1,7 @@
 {
   "name": "KDO - Karting Disciplina Oficial",
-  "description": "Plataforma oficial de gestión y portal informativo para KDO y Asociaciones Federadas.",
-  "requestFramePermissions": []
+  "description": "Plataforma federada de gestión y portal de carreras para KDO.",
+  "requestFramePermissions": [
+    "camera"
+  ]
 }

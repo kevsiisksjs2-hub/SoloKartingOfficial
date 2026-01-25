@@ -2,73 +2,66 @@
 import { GoogleGenAI, Type } from "@google/genai";
 
 export const aiService = {
-  /**
-   * Genera una respuesta de chat fluida usando Gemini 3 Pro.
-   */
-  async chatMessage(history: { role: 'user' | 'model', parts: { text: string }[] }[], message: string) {
+  // Use generateContent directly as per guidelines
+  async chat(message: string) {
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-    const chat = ai.chats.create({
+    const response = await ai.models.generateContent({
       model: 'gemini-3-pro-preview',
-      config: {
-        systemInstruction: 'Eres un experto en Karting y asistente de la plataforma KDO (Karting Disciplina Oficial). Ayudas a los usuarios con dudas sobre inscripciones oficiales, circuitos federados y reglamentos técnicos KDO. Sé conciso, profesional y directo.',
-      }
+      contents: message,
+      config: { systemInstruction: 'Eres el asistente oficial de KDO. Ayudas con inscripciones y reglamentos técnicos de karting.' }
     });
-    
-    const result = await chat.sendMessage({ message });
-    return result.text;
+    return response.text;
   },
 
-  /**
-   * Extrae rankings desde una imagen (foto de planilla) usando Gemini Vision.
-   */
-  async extractRankingsFromImage(base64Image: string, mimeType: string) {
+  // Added chatMessage to handle history from AIChatBot
+  async chatMessage(history: { role: string; parts: { text: string }[] }[], message: string) {
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+    const formattedContents = history.map(h => ({
+      role: h.role === 'model' ? 'model' : 'user',
+      parts: h.parts
+    }));
     
-    const prompt = `Analiza esta planilla de resultados oficial de karting. 
-    Tu tarea es extraer CADA piloto listado con su posición final (ranking), número de kart y nombre completo.
-    REGLAS CRÍTICAS:
-    1. Si el nombre está como 'ALVAREZ, Alexis', conviértelo a 'ALEXIS ALVAREZ'.
-    2. Asegúrate de capturar el número de kart correctamente.
-    3. Ignora filas vacías o encabezados.
-    4. Devuelve el resultado exclusivamente en el formato JSON solicitado.`;
+    formattedContents.push({
+      role: 'user',
+      parts: [{ text: message }]
+    });
 
-    try {
-      const response = await ai.models.generateContent({
-        model: 'gemini-3-flash-preview',
-        contents: [
-          {
-            parts: [
-              { text: prompt },
-              {
-                inlineData: {
-                  data: base64Image,
-                  mimeType: mimeType
-                }
-              }
-            ]
-          }
-        ],
-        config: {
-          responseMimeType: "application/json",
-          responseSchema: {
-            type: Type.ARRAY,
-            items: {
-              type: Type.OBJECT,
-              properties: {
-                ranking: { type: Type.INTEGER, description: "Posición final en la planilla" },
-                number: { type: Type.STRING, description: "Número de kart/dorsal" },
-                name: { type: Type.STRING, description: "Nombre completo del piloto" }
-              },
-              required: ["ranking", "number", "name"]
-            }
+    const response = await ai.models.generateContent({
+      model: 'gemini-3-pro-preview',
+      contents: formattedContents,
+      config: { systemInstruction: 'Eres el asistente oficial de KDO. Ayudas con inscripciones y reglamentos técnicos de karting.' }
+    });
+    return response.text;
+  },
+
+  async extractRankings(base64: string, mime: string) {
+    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+    const response = await ai.models.generateContent({
+      model: 'gemini-3-flash-preview',
+      contents: [
+        { 
+          parts: [
+            { text: "Extrae: posición (ranking), número de kart (number), nombre del piloto (name). JSON array." }, 
+            { inlineData: { data: base64, mimeType: mime } }
+          ] 
+        }
+      ],
+      config: {
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: Type.ARRAY,
+          items: {
+            type: Type.OBJECT,
+            properties: {
+              ranking: { type: Type.INTEGER },
+              number: { type: Type.STRING },
+              name: { type: Type.STRING }
+            },
+            required: ["ranking", "number", "name"]
           }
         }
-      });
-
-      return JSON.parse(response.text || '[]');
-    } catch (e) {
-      console.error("AI Extraction Error:", e);
-      throw new Error("No se pudo procesar la imagen. Asegúrate de que el texto sea legible.");
-    }
+      }
+    });
+    return JSON.parse(response.text || '[]');
   }
 };

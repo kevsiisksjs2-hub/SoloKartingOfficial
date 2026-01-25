@@ -1,24 +1,20 @@
 
-import { Pilot, Category, User, Status, Championship, Circuit, Association, RaceResult, TrackFlag, RegistrationLink, MarketplaceItem, Regulation } from '../types';
-import { INITIAL_PILOTS, INITIAL_CHAMPIONSHIPS, INITIAL_CIRCUITS, INITIAL_ASSOCIATIONS, INITIAL_CATEGORIES, INITIAL_REGISTRATION_LINKS } from '../constants';
+import { Pilot, Category, Championship, TrackFlag, Regulation, Circuit, Association, MarketplaceItem } from '../types';
+import { INITIAL_PILOTS, INITIAL_CATEGORIES, INITIAL_CHAMPIONSHIPS, INITIAL_CIRCUITS, INITIAL_ASSOCIATIONS, HISTORICAL_RANKINGS } from '../constants';
 
 const KEYS = {
-  PILOTS: 'sk_pilots',
-  CHAMPS: 'sk_champs',
-  CIRCUITS: 'sk_circuits',
-  ASSOCS: 'sk_assocs',
-  CATEGORIES: 'sk_categories',
-  RESULTS: 'sk_results',
-  TRACK_STATUS: 'sk_track_status',
-  AUTH: 'sk_auth',
-  USERS: 'sk_users_list',
-  LINKS: 'sk_links',
-  LIVE_RESULTS_URL: 'sk_live_url',
-  HISTORY_RESULTS_URL: 'sk_history_url',
-  STREAMING_URL: 'sk_streaming_url',
-  RANKINGS_PREFIX: 'sk_ranking_',
-  MARKETPLACE: 'sk_marketplace',
-  REGULATIONS: 'sk_regulations',
+  PILOTS: 'kdo_pilots',
+  CHAMPS: 'kdo_champs',
+  CATS: 'kdo_categories',
+  REGS: 'kdo_regulations',
+  LIVE_URL: 'kdo_live_url',
+  HIST_URL: 'kdo_hist_url',
+  STREAM_URL: 'kdo_stream_url',
+  TRACK: 'kdo_track_status',
+  AUTH: 'kdo_auth',
+  CIRCUITS: 'kdo_circuits',
+  ASSOCS: 'kdo_assocs',
+  MARKET: 'kdo_market'
 };
 
 export const storageService = {
@@ -26,105 +22,67 @@ export const storageService = {
     const data = localStorage.getItem(KEYS.PILOTS);
     return data ? JSON.parse(data) : INITIAL_PILOTS;
   },
-  savePilots: (pilots: Pilot[]) => {
-    localStorage.setItem(KEYS.PILOTS, JSON.stringify(pilots));
+  savePilots: (p: Pilot[]) => localStorage.setItem(KEYS.PILOTS, JSON.stringify(p)),
+  
+  getCategories: (): Category[] => {
+    const data = localStorage.getItem(KEYS.CATS);
+    return data ? JSON.parse(data) : INITIAL_CATEGORIES;
   },
-  getCategoryRankings: (category: string): any[] => {
-    const data = localStorage.getItem(KEYS.RANKINGS_PREFIX + category);
+  saveCategories: (c: Category[]) => localStorage.setItem(KEYS.CATS, JSON.stringify(c)),
+
+  getRegulations: (): Regulation[] => {
+    const data = localStorage.getItem(KEYS.REGS);
     return data ? JSON.parse(data) : [];
   },
-  saveCategoryRankings: (category: string, rankings: any[]) => {
-    localStorage.setItem(KEYS.RANKINGS_PREFIX + category, JSON.stringify(rankings));
+  saveRegulations: (r: Regulation[]) => localStorage.setItem(KEYS.REGS, JSON.stringify(r)),
+
+  getTrackStatus: () => (localStorage.getItem(KEYS.TRACK) as TrackFlag) || TrackFlag.VERDE,
+  saveTrackStatus: (s: TrackFlag) => localStorage.setItem(KEYS.TRACK, s),
+
+  getAuth: () => {
+    const data = localStorage.getItem(KEYS.AUTH);
+    return data ? JSON.parse(data) : null;
   },
-  getResults: (): RaceResult[] => {
-    const data = localStorage.getItem(KEYS.RESULTS);
-    return data ? JSON.parse(data) : [];
-  },
-  saveResults: (results: RaceResult[]) => {
-    localStorage.setItem(KEYS.RESULTS, JSON.stringify(results));
-  },
-  getLiveUrl: (): string => {
-    return localStorage.getItem(KEYS.LIVE_RESULTS_URL) || 'https://speedhive.mylaps.com/LiveTiming';
-  },
-  saveLiveUrl: (url: string) => {
-    localStorage.setItem(KEYS.LIVE_RESULTS_URL, url);
-  },
-  getHistoryUrl: (): string => {
-    return localStorage.getItem(KEYS.HISTORY_RESULTS_URL) || 'https://speedhive.mylaps.com';
-  },
-  saveHistoryUrl: (url: string) => {
-    localStorage.setItem(KEYS.HISTORY_RESULTS_URL, url);
-  },
-  getStreamingUrl: (): string => {
-    return localStorage.getItem(KEYS.STREAMING_URL) || 'https://www.youtube.com/@KDOoficial';
-  },
-  saveStreamingUrl: (url: string) => {
-    localStorage.setItem(KEYS.STREAMING_URL, url);
-  },
-  getTrackStatus: (): TrackFlag => {
-    return (localStorage.getItem(KEYS.TRACK_STATUS) as TrackFlag) || TrackFlag.VERDE;
-  },
-  saveTrackStatus: (status: TrackFlag) => {
-    localStorage.setItem(KEYS.TRACK_STATUS, status);
-  },
-  getChampionships: (): Championship[] => {
-    const data = localStorage.getItem(KEYS.CHAMPS);
-    return data ? JSON.parse(data) : INITIAL_CHAMPIONSHIPS;
-  },
-  saveChampionships: (champs: Championship[]) => {
-    localStorage.setItem(KEYS.CHAMPS, JSON.stringify(champs));
-  },
+  setAuth: (u: any) => u ? localStorage.setItem(KEYS.AUTH, JSON.stringify(u)) : localStorage.removeItem(KEYS.AUTH),
+  
+  getLiveUrl: () => localStorage.getItem(KEYS.LIVE_URL) || 'https://speedhive.mylaps.com/LiveTiming',
+  saveLiveUrl: (u: string) => localStorage.setItem(KEYS.LIVE_URL, u),
+
+  // Added missing method for history URL
+  getHistoryUrl: () => localStorage.getItem(KEYS.HIST_URL) || 'https://speedhive.mylaps.com',
+  saveHistoryUrl: (u: string) => localStorage.setItem(KEYS.HIST_URL, u),
+
+  // Added missing method for streaming URL
+  getStreamingUrl: () => localStorage.getItem(KEYS.STREAM_URL) || 'https://youtube.com',
+  saveStreamingUrl: (u: string) => localStorage.setItem(KEYS.STREAM_URL, u),
+
+  // Added missing method for circuits
   getCircuits: (): Circuit[] => {
     const data = localStorage.getItem(KEYS.CIRCUITS);
     return data ? JSON.parse(data) : INITIAL_CIRCUITS;
   },
-  saveCircuits: (circuits: Circuit[]) => {
-    localStorage.setItem(KEYS.CIRCUITS, JSON.stringify(circuits));
-  },
+
+  // Added missing method for associations
   getAssociations: (): Association[] => {
     const data = localStorage.getItem(KEYS.ASSOCS);
     return data ? JSON.parse(data) : INITIAL_ASSOCIATIONS;
   },
-  saveAssociations: (assocs: Association[]) => {
-    localStorage.setItem(KEYS.ASSOCS, JSON.stringify(assocs));
+
+  // Added missing method for championships
+  getChampionships: (): Championship[] => {
+    const data = localStorage.getItem(KEYS.CHAMPS);
+    return data ? JSON.parse(data) : INITIAL_CHAMPIONSHIPS;
   },
-  getCategories: (): Category[] => {
-    const data = localStorage.getItem(KEYS.CATEGORIES);
-    return data ? JSON.parse(data) : INITIAL_CATEGORIES;
+
+  // Added missing method for category rankings
+  getCategoryRankings: (category: string) => {
+    return HISTORICAL_RANKINGS;
   },
-  saveCategories: (categories: Category[]) => {
-    localStorage.setItem(KEYS.CATEGORIES, JSON.stringify(categories));
-  },
-  getUsers: (): any[] => {
-    const data = localStorage.getItem(KEYS.USERS);
-    return data ? JSON.parse(data) : [
-      { id: '1', username: 'kdoadmin', role: 'admin' },
-      { id: '2', username: 'FRAD 3', role: 'admin' }
-    ];
-  },
-  saveUsers: (users: any[]) => {
-    localStorage.setItem(KEYS.USERS, JSON.stringify(users));
-  },
-  getAuth: (): User | null => {
-    const data = localStorage.getItem(KEYS.AUTH);
-    return data ? JSON.parse(data) : null;
-  },
-  setAuth: (user: User | null) => {
-    if (user) localStorage.setItem(KEYS.AUTH, JSON.stringify(user));
-    else localStorage.removeItem(KEYS.AUTH);
-  },
+
+  // Added missing methods for marketplace
   getMarketplace: (): MarketplaceItem[] => {
-    const data = localStorage.getItem(KEYS.MARKETPLACE);
+    const data = localStorage.getItem(KEYS.MARKET);
     return data ? JSON.parse(data) : [];
   },
-  saveMarketplace: (items: MarketplaceItem[]) => {
-    localStorage.setItem(KEYS.MARKETPLACE, JSON.stringify(items));
-  },
-  getRegulations: (): Regulation[] => {
-    const data = localStorage.getItem(KEYS.REGULATIONS);
-    return data ? JSON.parse(data) : [];
-  },
-  saveRegulations: (regs: Regulation[]) => {
-    localStorage.setItem(KEYS.REGULATIONS, JSON.stringify(regs));
-  }
+  saveMarketplace: (m: MarketplaceItem[]) => localStorage.setItem(KEYS.MARKET, JSON.stringify(m))
 };

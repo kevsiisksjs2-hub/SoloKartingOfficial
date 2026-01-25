@@ -1,27 +1,9 @@
 
 export type Category = string;
+export enum Status { CONFIRMADO = 'Confirmado', PENDIENTE = 'Pendiente', BAJA = 'Baja' }
+export enum TrackFlag { VERDE = 'Verde', AMARILLA = 'Amarilla', ROJA = 'Roja', CUADROS = 'Cuadros', AZUL = 'Azul' }
 
-export enum Status {
-  CONFIRMADO = 'Confirmado',
-  PENDIENTE = 'Pendiente',
-  BAJA = 'Baja'
-}
-
-export enum TrackFlag {
-  VERDE = 'Verde',
-  AMARILLA = 'Amarilla',
-  ROJA = 'Roja',
-  CUADROS = 'Cuadros',
-  AZUL = 'Azul'
-}
-
-export interface Association {
-  id: string;
-  name: string;
-  logo?: string;
-  description?: string;
-  circuitIds?: string[];
-}
+export type RegulationCategory = 'Técnico' | 'Deportivo' | 'Anexo' | 'Calendario' | 'Institucional';
 
 export interface Pilot {
   id: string;
@@ -30,38 +12,13 @@ export interface Pilot {
   category: Category;
   status: Status;
   ranking: number;
-  association?: string; // Ahora es opcional
-  lastUpdated: string;
   medicalLicense: string;
   sportsLicense: string;
-  transponderId: string; // ID Estilo Mylaps (Hex)
+  transponderId: string;
   conductPoints: number;
-  stats: {
-    wins: number;
-    podiums: number;
-    poles: number;
-  };
-}
-
-export interface TimingRow {
-  pos: number;
-  no: string;
-  name: string;
-  laps: number;
-  lastLap: string;
-  bestLap: string;
-  gap: string;
-  interval: string;
-  status: 'In' | 'Out' | 'Pit';
-  lastPass: number; // timestamp
-  isSessionBest?: boolean;
-  isPersonalBest?: boolean;
-}
-
-export interface User {
-  id: string;
-  username: string;
-  role: 'admin' | 'editor';
+  lastUpdated: string;
+  association?: string;
+  stats: { wins: number; podiums: number; poles: number; };
 }
 
 export interface Championship {
@@ -71,6 +28,17 @@ export interface Championship {
   dates: string;
   tracks: string;
   image: string;
+}
+
+export interface Regulation {
+  id: string;
+  title: string;
+  description: string;
+  category: RegulationCategory;
+  fileData: string;
+  fileName: string;
+  fileSize: string;
+  date: string;
 }
 
 export interface Circuit {
@@ -83,28 +51,26 @@ export interface Circuit {
   features: string[];
 }
 
-export interface RegistrationLink {
-  category: string;
-  url: string;
+export interface Association {
+  id: string;
+  name: string;
+  description: string;
+  circuitIds?: string[];
 }
 
-export interface RaceResult {
-  id: string;
-  category: string;
-  date: string;
-  circuit: string;
-  fastestLap: {
-    pilot: string;
-    time: string;
-  };
-  classification: {
-    pos: number;
-    number: string;
-    name: string;
-    laps: number;
-    gap: string;
-    bestLap: string;
-  }[];
+export interface TimingRow {
+  pos: number;
+  no: string;
+  name: string;
+  laps: number;
+  lastLap: string;
+  bestLap: string;
+  gap: string;
+  interval: string;
+  status: string;
+  lastPass: number;
+  isSessionBest?: boolean;
+  isPersonalBest?: boolean;
 }
 
 export interface MarketplaceItem {
@@ -115,14 +81,4 @@ export interface MarketplaceItem {
   condition: 'Nuevo' | 'Usado';
   image: string;
   contact: string;
-}
-
-export interface Regulation {
-  id: string;
-  title: string;
-  description: string;
-  fileData: string; // Base64 string del PDF
-  fileName: string;
-  fileSize: string;
-  date: string;
 }
