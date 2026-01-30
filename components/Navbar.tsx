@@ -28,8 +28,8 @@ const Navbar: React.FC = () => {
         <div className="flex items-center justify-between h-20">
           <div className="flex items-center">
             <Link to="/" className="flex items-center gap-2 group">
-              <div className="bg-red-600 p-1.5 rounded italic font-black text-white text-xl oswald tracking-tighter transition-transform group-hover:scale-105">
-                KDO <span className="text-black bg-white px-1 rounded-sm text-sm">KARTING DISCIPLINA OFICIAL</span>
+              <div className="bg-blue-600 px-3 py-1.5 rounded italic font-black text-white text-xl oswald tracking-tighter transition-transform group-hover:scale-105">
+                PKN <span className="text-black bg-white px-1.5 rounded-sm text-[10px] ml-1">PILOTOS KARTING DEL NORTE</span>
               </div>
             </Link>
           </div>
@@ -42,7 +42,7 @@ const Navbar: React.FC = () => {
                   to={link.path}
                   className={`px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${
                     location.pathname === link.path 
-                      ? 'text-red-500' 
+                      ? 'text-blue-500' 
                       : 'text-zinc-400 hover:text-white hover:bg-zinc-900'
                   }`}
                 >
@@ -56,7 +56,7 @@ const Navbar: React.FC = () => {
                 href="https://speedhive.mylaps.com/LiveTiming"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center gap-2 text-zinc-400 hover:text-emerald-500 transition-colors text-[10px] font-black uppercase tracking-widest"
+                className="flex items-center gap-2 text-zinc-400 hover:text-blue-500 transition-colors text-[10px] font-black uppercase tracking-widest"
               >
                 <Activity size={14} />
                 Crono
@@ -65,19 +65,19 @@ const Navbar: React.FC = () => {
                 href={streamingUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest bg-red-600 text-white hover:bg-red-700 transition-all shadow-xl shadow-red-600/20"
+                className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest bg-blue-600 text-white hover:bg-blue-700 transition-all shadow-xl shadow-blue-600/20"
               >
                 <Radio size={14} className="animate-pulse" />
                 Streaming
               </a>
-              <Link to="/AdminKDO" className="text-zinc-600 hover:text-white transition-colors" title="Admin">
+              <Link to="/AdminKDO" className="text-zinc-800 hover:text-white transition-colors" title="Admin">
                 <Shield size={16} />
               </Link>
             </div>
           </div>
 
           <div className="lg:hidden flex items-center gap-4">
-             <a href={streamingUrl} target="_blank" className="p-2 bg-red-600 rounded-lg text-white">
+             <a href={streamingUrl} target="_blank" className="p-2 bg-blue-600 rounded-lg text-white">
                 <Radio size={20} className="animate-pulse" />
              </a>
             <button
@@ -99,7 +99,7 @@ const Navbar: React.FC = () => {
                 to={link.path}
                 className={`block px-4 py-3 rounded-xl text-sm font-black uppercase tracking-widest ${
                   location.pathname === link.path 
-                    ? 'text-red-500 bg-red-600/10' 
+                    ? 'text-blue-500 bg-blue-600/10' 
                     : 'text-zinc-400 hover:text-white hover:bg-zinc-900'
                 }`}
                 onClick={() => setIsOpen(false)}

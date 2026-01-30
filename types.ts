@@ -1,7 +1,31 @@
 
 export type Category = string;
 export enum Status { CONFIRMADO = 'Confirmado', PENDIENTE = 'Pendiente', BAJA = 'Baja' }
-export enum TrackFlag { VERDE = 'Verde', AMARILLA = 'Amarilla', ROJA = 'Roja', CUADROS = 'Cuadros', AZUL = 'Azul' }
+
+// Track flags for race control
+export enum TrackFlag {
+  VERDE = 'Verde',
+  AMARILLA = 'Amarilla',
+  ROJA = 'Roja',
+  AZUL = 'Azul',
+  CUADROS = 'Cuadros'
+}
+
+// Timing data for live sessions
+export interface TimingRow {
+  pos: number;
+  no: string;
+  name: string;
+  laps: number;
+  lastLap: string;
+  bestLap: string;
+  gap: string;
+  interval: string;
+  status: string;
+  lastPass: number;
+  isSessionBest?: boolean;
+  isPersonalBest?: boolean;
+}
 
 export type RegulationCategory = 'Técnico' | 'Deportivo' | 'Anexo' | 'Calendario' | 'Institucional';
 
@@ -56,21 +80,6 @@ export interface Association {
   name: string;
   description: string;
   circuitIds?: string[];
-}
-
-export interface TimingRow {
-  pos: number;
-  no: string;
-  name: string;
-  laps: number;
-  lastLap: string;
-  bestLap: string;
-  gap: string;
-  interval: string;
-  status: string;
-  lastPass: number;
-  isSessionBest?: boolean;
-  isPersonalBest?: boolean;
 }
 
 export interface MarketplaceItem {

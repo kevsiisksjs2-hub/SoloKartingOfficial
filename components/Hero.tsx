@@ -16,21 +16,21 @@ const Hero: React.FC = () => {
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
         <div className="max-w-2xl animate-in fade-in slide-in-from-left-8 duration-700">
           <div className="flex items-center gap-2 mb-6">
-            <span className="w-10 h-[2px] bg-red-600"></span>
-            <h2 className="text-red-600 font-black uppercase tracking-[0.4em] text-[10px] oswald italic">KDO - Karting Disciplina Oficial</h2>
+            <span className="w-10 h-[2px] bg-blue-600"></span>
+            <h2 className="text-blue-600 font-black uppercase tracking-[0.4em] text-[10px] oswald italic">PKN - Pilotos Karting del Norte</h2>
           </div>
           <h1 className="text-6xl md:text-8xl font-black italic oswald text-white mb-6 uppercase leading-[0.9] tracking-tighter">
-            DOMINA LA <br />
-            <span className="text-red-600">TIERRA</span>
+            PASIÓN <br />
+            <span className="text-blue-600">DEL NORTE</span>
           </h1>
           <p className="text-lg text-zinc-400 mb-10 leading-relaxed font-medium max-w-lg">
-            Noticias, Competencias, Rankings y los mejores circuitos federados del país. 
-            Toda la adrenalina del karting nacional bajo fiscalización oficial.
+            La comunidad más grande de karting en tierra de la provincia. 
+            Competencia, técnica y camaradería bajo el sello oficial PKN.
           </p>
           <div className="flex flex-wrap gap-5">
             <Link 
               to="/campeonatos" 
-              className="bg-red-600 hover:bg-red-700 text-white px-10 py-5 rounded-2xl font-black uppercase text-xs flex items-center gap-3 transition-all transform hover:-translate-y-1 shadow-2xl shadow-red-600/20"
+              className="bg-blue-600 hover:bg-blue-700 text-white px-10 py-5 rounded-2xl font-black uppercase text-xs flex items-center gap-3 transition-all transform hover:-translate-y-1 shadow-2xl shadow-blue-600/20"
             >
               Ver Campeonatos
               <ChevronRight size={18} />
@@ -46,7 +46,6 @@ const Hero: React.FC = () => {
         </div>
       </div>
       
-      {/* Decoración inferior */}
       <div className="absolute bottom-0 left-0 w-full h-32 bg-gradient-to-t from-zinc-950 to-transparent z-10"></div>
     </div>
   );

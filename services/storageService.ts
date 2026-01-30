@@ -1,20 +1,19 @@
 
-import { Pilot, Category, Championship, TrackFlag, Regulation, Circuit, Association, MarketplaceItem } from '../types';
-import { INITIAL_PILOTS, INITIAL_CATEGORIES, INITIAL_CHAMPIONSHIPS, INITIAL_CIRCUITS, INITIAL_ASSOCIATIONS, HISTORICAL_RANKINGS } from '../constants';
+import { Pilot, Category, Championship, Regulation, Circuit, Association, MarketplaceItem, TrackFlag } from '../types';
+import { INITIAL_PILOTS, INITIAL_CATEGORIES, INITIAL_CHAMPIONSHIPS, INITIAL_CIRCUITS, INITIAL_ASSOCIATIONS } from '../constants';
 
 const KEYS = {
-  PILOTS: 'kdo_pilots',
-  CHAMPS: 'kdo_champs',
-  CATS: 'kdo_categories',
-  REGS: 'kdo_regulations',
-  LIVE_URL: 'kdo_live_url',
-  HIST_URL: 'kdo_hist_url',
-  STREAM_URL: 'kdo_stream_url',
-  TRACK: 'kdo_track_status',
-  AUTH: 'kdo_auth',
-  CIRCUITS: 'kdo_circuits',
-  ASSOCS: 'kdo_assocs',
-  MARKET: 'kdo_market'
+  PILOTS: 'pkn_pilots',
+  CHAMPS: 'pkn_champs',
+  CATS: 'pkn_categories',
+  REGS: 'pkn_regulations',
+  LIVE_URL: 'pkn_live_url',
+  STREAM_URL: 'pkn_stream_url',
+  AUTH: 'pkn_auth',
+  CIRCUITS: 'pkn_circuits',
+  ASSOCS: 'pkn_assocs',
+  MARKET: 'pkn_market',
+  TRACK_STATUS: 'pkn_track_status'
 };
 
 export const storageService = {
@@ -36,9 +35,6 @@ export const storageService = {
   },
   saveRegulations: (r: Regulation[]) => localStorage.setItem(KEYS.REGS, JSON.stringify(r)),
 
-  getTrackStatus: () => (localStorage.getItem(KEYS.TRACK) as TrackFlag) || TrackFlag.VERDE,
-  saveTrackStatus: (s: TrackFlag) => localStorage.setItem(KEYS.TRACK, s),
-
   getAuth: () => {
     const data = localStorage.getItem(KEYS.AUTH);
     return data ? JSON.parse(data) : null;
@@ -48,41 +44,40 @@ export const storageService = {
   getLiveUrl: () => localStorage.getItem(KEYS.LIVE_URL) || 'https://speedhive.mylaps.com/LiveTiming',
   saveLiveUrl: (u: string) => localStorage.setItem(KEYS.LIVE_URL, u),
 
-  // Added missing method for history URL
-  getHistoryUrl: () => localStorage.getItem(KEYS.HIST_URL) || 'https://speedhive.mylaps.com',
-  saveHistoryUrl: (u: string) => localStorage.setItem(KEYS.HIST_URL, u),
-
-  // Added missing method for streaming URL
   getStreamingUrl: () => localStorage.getItem(KEYS.STREAM_URL) || 'https://youtube.com',
   saveStreamingUrl: (u: string) => localStorage.setItem(KEYS.STREAM_URL, u),
 
-  // Added missing method for circuits
   getCircuits: (): Circuit[] => {
     const data = localStorage.getItem(KEYS.CIRCUITS);
     return data ? JSON.parse(data) : INITIAL_CIRCUITS;
   },
+  saveCircuits: (c: Circuit[]) => localStorage.setItem(KEYS.CIRCUITS, JSON.stringify(c)),
 
-  // Added missing method for associations
   getAssociations: (): Association[] => {
     const data = localStorage.getItem(KEYS.ASSOCS);
     return data ? JSON.parse(data) : INITIAL_ASSOCIATIONS;
   },
 
-  // Added missing method for championships
   getChampionships: (): Championship[] => {
     const data = localStorage.getItem(KEYS.CHAMPS);
     return data ? JSON.parse(data) : INITIAL_CHAMPIONSHIPS;
   },
+  saveChampionships: (c: Championship[]) => localStorage.setItem(KEYS.CHAMPS, JSON.stringify(c)),
 
-  // Added missing method for category rankings
-  getCategoryRankings: (category: string) => {
-    return HISTORICAL_RANKINGS;
-  },
-
-  // Added missing methods for marketplace
   getMarketplace: (): MarketplaceItem[] => {
     const data = localStorage.getItem(KEYS.MARKET);
     return data ? JSON.parse(data) : [];
   },
-  saveMarketplace: (m: MarketplaceItem[]) => localStorage.setItem(KEYS.MARKET, JSON.stringify(m))
+  saveMarketplace: (m: MarketplaceItem[]) => localStorage.setItem(KEYS.MARKET, JSON.stringify(m)),
+
+  getCategoryRankings: (category: string): { ranking: number; number: string; name: string }[] => {
+    const data = localStorage.getItem('pkn_rankings_' + category);
+    return data ? JSON.parse(data) : [];
+  },
+
+  getTrackStatus: (): TrackFlag => {
+    return (localStorage.getItem(KEYS.TRACK_STATUS) as TrackFlag) || TrackFlag.VERDE;
+  },
+
+  saveTrackStatus: (status: TrackFlag) => localStorage.setItem(KEYS.TRACK_STATUS, status)
 };

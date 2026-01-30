@@ -4,84 +4,52 @@ import { Facebook, Twitter, Instagram, Youtube } from 'lucide-react';
 
 const Footer: React.FC = () => {
   return (
-    <footer className="bg-zinc-950 border-t border-zinc-900 pt-16 pb-8">
+    <footer className="bg-black border-t border-zinc-900 pt-16 pb-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-16">
           <div className="col-span-1 md:col-span-1">
-             <div className="bg-red-600 p-1.5 rounded italic font-black text-white text-xl oswald tracking-tighter w-fit mb-6">
-                KDO <span className="text-black bg-white px-1 rounded-sm text-xs">KARTING DISCIPLINA OFICIAL</span>
+             <div className="bg-blue-600 px-3 py-1.5 rounded italic font-black text-white text-lg oswald tracking-tighter w-fit mb-6">
+                PKN <span className="text-black bg-white px-1.5 rounded-sm text-[8px] ml-1">PILOTOS KARTING DEL NORTE</span>
               </div>
-            <p className="text-zinc-500 leading-relaxed">
-              La plataforma oficial fiscalizada para los amantes del karting. Sigue los resultados en tiempo real y gestiona tus inscripciones bajo normativa vigente.
+            <p className="text-zinc-500 leading-relaxed text-sm font-medium">
+              El punto de encuentro para todos los pilotos del norte. Gestión profesional de carreras en tierra bajo normativa federada oficial.
             </p>
           </div>
           
           <div>
-            <h4 className="text-white font-bold uppercase mb-6">Información</h4>
-            <ul className="space-y-4 text-zinc-400">
-              <li><a href="#" className="hover:text-red-500 transition-colors">Sobre Nosotros</a></li>
-              <li><a href="#" className="hover:text-red-500 transition-colors">Contacto</a></li>
-              <li><a href="#" className="hover:text-red-500 transition-colors">Publicidad</a></li>
+            <h4 className="text-white font-black uppercase text-[10px] tracking-widest mb-6">Institucional</h4>
+            <ul className="space-y-4 text-zinc-500 text-xs font-bold uppercase tracking-tight">
+              <li><a href="#" className="hover:text-blue-500 transition-colors">Historia PKN</a></li>
+              <li><a href="#" className="hover:text-blue-500 transition-colors">Contacto Oficial</a></li>
+              <li><a href="#" className="hover:text-blue-500 transition-colors">Prensa y Medios</a></li>
             </ul>
           </div>
 
           <div>
-            <h4 className="text-white font-bold uppercase mb-6">Enlaces Rápidos</h4>
-            <ul className="space-y-4 text-zinc-400">
-              <li><a href="#/circuitos" className="hover:text-red-500 transition-colors">Circuitos</a></li>
-              <li><a href="#/campeonatos" className="hover:text-red-500 transition-colors">Campeonatos</a></li>
-              <li><a href="#/inscripciones" className="hover:text-red-500 transition-colors">Inscripciones</a></li>
+            <h4 className="text-white font-black uppercase text-[10px] tracking-widest mb-6">Accesos</h4>
+            <ul className="space-y-4 text-zinc-500 text-xs font-bold uppercase tracking-tight">
+              <li><a href="#/circuitos" className="hover:text-blue-500 transition-colors">Circuitos</a></li>
+              <li><a href="#/campeonatos" className="hover:text-blue-500 transition-colors">Torneos</a></li>
+              <li><a href="#/inscripciones" className="hover:text-blue-500 transition-colors">Inscribirse</a></li>
             </ul>
           </div>
 
           <div>
-            <h4 className="text-white font-bold uppercase mb-6">Síguenos</h4>
+            <h4 className="text-white font-black uppercase text-[10px] tracking-widest mb-6">Comunidad</h4>
             <div className="flex gap-4">
-              <a 
-                href="#" 
-                target="_blank" 
-                rel="noopener noreferrer" 
-                className="bg-zinc-900 p-3 rounded-full text-zinc-400 hover:text-white hover:bg-blue-600 transition-all shadow-lg"
-                title="Facebook"
-              >
-                <Facebook size={20} />
-              </a>
-              <a 
-                href="#" 
-                target="_blank" 
-                rel="noopener noreferrer" 
-                className="bg-zinc-900 p-3 rounded-full text-zinc-400 hover:text-white hover:bg-sky-500 transition-all shadow-lg"
-                title="Twitter"
-              >
-                <Twitter size={20} />
-              </a>
-              <a 
-                href="#" 
-                target="_blank" 
-                rel="noopener noreferrer" 
-                className="bg-zinc-900 p-3 rounded-full text-zinc-400 hover:text-white hover:bg-gradient-to-tr hover:from-yellow-500 hover:via-red-500 hover:to-purple-600 transition-all shadow-lg"
-                title="Instagram"
-              >
-                <Instagram size={20} />
-              </a>
-              <a 
-                href="#" 
-                target="_blank" 
-                rel="noopener noreferrer" 
-                className="bg-zinc-900 p-3 rounded-full text-zinc-400 hover:text-white hover:bg-red-700 transition-all shadow-lg"
-                title="YouTube"
-              >
-                <Youtube size={20} />
-              </a>
+              <a href="#" className="bg-zinc-900 p-3 rounded-full text-zinc-400 hover:text-white hover:bg-blue-600 transition-all shadow-lg"><Facebook size={18} /></a>
+              <a href="#" className="bg-zinc-900 p-3 rounded-full text-zinc-400 hover:text-white hover:bg-sky-500 transition-all shadow-lg"><Twitter size={18} /></a>
+              <a href="#" className="bg-zinc-900 p-3 rounded-full text-zinc-400 hover:text-white hover:bg-gradient-to-tr hover:from-yellow-500 hover:via-red-500 hover:to-purple-600 transition-all shadow-lg"><Instagram size={18} /></a>
+              <a href="#" className="bg-zinc-900 p-3 rounded-full text-zinc-400 hover:text-white hover:bg-blue-700 transition-all shadow-lg"><Youtube size={18} /></a>
             </div>
           </div>
         </div>
         
         <div className="border-t border-zinc-900 pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
-          <p className="text-zinc-600 text-sm">© 2024 KDO - Karting Disciplina Oficial. Todos los derechos reservados.</p>
-          <div className="flex gap-6 text-zinc-600 text-sm">
-            <a href="#" className="hover:text-zinc-400">Términos y Condiciones</a>
-            <a href="#" className="hover:text-zinc-400">Política de Privacidad</a>
+          <p className="text-zinc-800 text-[10px] font-black uppercase tracking-widest">© 2024 PKN - PILOTOS KARTING DEL NORTE. TODOS LOS DERECHOS RESERVADOS.</p>
+          <div className="flex gap-6 text-zinc-800 text-[10px] font-black uppercase tracking-widest">
+            <a href="#" className="hover:text-zinc-400 transition-colors">Términos</a>
+            <a href="#" className="hover:text-zinc-400 transition-colors">Privacidad</a>
           </div>
         </div>
       </div>

@@ -14,8 +14,7 @@ const AdminLogin: React.FC = () => {
     e.preventDefault();
     
     const validUsers = [
-      { user: 'kdoadmin', pass: 'kdo2026', role: 'admin' },
-      { user: 'FRAD 3', pass: 'Frad3.2026', role: 'admin' }
+      { user: 'pknadmin', pass: 'pkn2026', role: 'admin' }
     ];
 
     const match = validUsers.find(u => u.user === username && u.pass === password);
@@ -28,48 +27,48 @@ const AdminLogin: React.FC = () => {
       });
       navigate('/AdminKDO/dashboard');
     } else {
-      setError('Credenciales incorrectas. Verifique usuario y contraseña.');
+      setError('Credenciales incorrectas. Verifique acceso PKN.');
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-zinc-950 px-4">
+    <div className="min-h-screen flex items-center justify-center bg-black px-4">
       <div className="max-w-md w-full">
         <div className="text-center mb-10">
-          <div className="bg-red-600 inline-block p-2 rounded-lg italic font-black text-white text-3xl oswald tracking-tighter mb-4 shadow-[0_0_30px_rgba(220,38,38,0.3)]">
-            ADMIN <span className="text-black bg-white px-1 rounded-sm">KDO</span>
+          <div className="bg-blue-600 inline-block px-4 py-2 rounded-xl italic font-black text-white text-3xl oswald tracking-tighter mb-4 shadow-[0_0_30px_rgba(37,99,235,0.3)]">
+            ADMIN <span className="text-black bg-white px-1.5 rounded-sm">PKN</span>
           </div>
-          <h2 className="text-2xl font-black text-white uppercase tracking-tight oswald">Panel de Gestión</h2>
-          <p className="text-zinc-500 mt-2 text-xs font-black uppercase tracking-widest italic">Solo personal autorizado</p>
+          <h2 className="text-2xl font-black text-white uppercase tracking-tight oswald leading-none">Pilotos Karting del Norte</h2>
+          <p className="text-zinc-600 mt-3 text-[9px] font-black uppercase tracking-[0.4em] italic">Sistema de Gestión Centralizado</p>
         </div>
 
-        <div className="bg-zinc-900 border border-zinc-800 p-8 rounded-[2rem] shadow-2xl relative overflow-hidden">
-          <div className="absolute top-0 left-0 w-full h-1 bg-red-600"></div>
+        <div className="bg-zinc-900 border border-zinc-800 p-10 rounded-[2.5rem] shadow-2xl relative overflow-hidden">
+          <div className="absolute top-0 left-0 w-full h-1.5 bg-blue-600"></div>
           
-          <form onSubmit={handleLogin} className="space-y-6">
+          <form onSubmit={handleLogin} className="space-y-8">
             <div>
-              <label className="block text-zinc-500 text-[10px] font-black uppercase tracking-widest mb-2 ml-1">Usuario</label>
+              <label className="block text-zinc-500 text-[10px] font-black uppercase tracking-widest mb-3 ml-1">Identificador de Usuario</label>
               <div className="relative group">
-                <UserIcon className="absolute left-4 top-4 text-zinc-600 group-focus-within:text-red-600 transition-colors" size={18} />
+                <UserIcon className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-600 group-focus-within:text-blue-600 transition-colors" size={18} />
                 <input
                   type="text"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
-                  className="w-full bg-zinc-950 border border-zinc-800 rounded-xl py-4 pl-12 pr-4 text-white font-bold focus:outline-none focus:border-red-600 transition-all uppercase placeholder:text-zinc-800 text-sm"
-                  placeholder="Usuario KDO"
+                  className="w-full bg-zinc-950 border border-zinc-800 rounded-2xl py-4 pl-12 pr-4 text-white font-bold focus:outline-none focus:border-blue-600 transition-all uppercase placeholder:text-zinc-800 text-sm"
+                  placeholder="USUARIO PKN"
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-zinc-500 text-[10px] font-black uppercase tracking-widest mb-2 ml-1">Contraseña</label>
+              <label className="block text-zinc-500 text-[10px] font-black uppercase tracking-widest mb-3 ml-1">Clave PKN System</label>
               <div className="relative group">
-                <Lock className="absolute left-4 top-4 text-zinc-600 group-focus-within:text-red-600 transition-colors" size={18} />
+                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-600 group-focus-within:text-blue-600 transition-colors" size={18} />
                 <input
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full bg-zinc-950 border border-zinc-800 rounded-xl py-4 pl-12 pr-4 text-white focus:outline-none focus:border-red-600 transition-all placeholder:text-zinc-800 text-sm"
+                  className="w-full bg-zinc-950 border border-zinc-800 rounded-2xl py-4 pl-12 pr-4 text-white focus:outline-none focus:border-blue-600 transition-all placeholder:text-zinc-800 text-sm"
                   placeholder="••••••••"
                 />
               </div>
@@ -84,15 +83,15 @@ const AdminLogin: React.FC = () => {
 
             <button
               type="submit"
-              className="w-full bg-red-600 hover:bg-red-700 text-white font-black uppercase py-5 rounded-xl transition-all transform hover:scale-[1.02] shadow-xl shadow-red-600/20 oswald tracking-wider"
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-black uppercase py-6 rounded-2xl transition-all transform active:scale-95 shadow-xl shadow-blue-600/20 oswald tracking-wider text-xl italic"
             >
-              Ingresar al Sistema
+              Iniciar Gestión PKN
             </button>
           </form>
         </div>
         
-        <p className="text-center text-zinc-700 text-[8px] font-black uppercase tracking-[0.4em] mt-8">
-          SISTEMA DE GESTIÓN OFICIAL KDO • ACCESO RESTRINGIDO
+        <p className="text-center text-zinc-800 text-[8px] font-black uppercase tracking-[0.5em] mt-8">
+          PILOTOS KARTING DEL NORTE • ACCESO ADMINISTRATIVO
         </p>
       </div>
     </div>

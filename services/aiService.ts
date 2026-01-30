@@ -2,18 +2,16 @@
 import { GoogleGenAI, Type } from "@google/genai";
 
 export const aiService = {
-  // Use generateContent directly as per guidelines
   async chat(message: string) {
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
     const response = await ai.models.generateContent({
       model: 'gemini-3-pro-preview',
       contents: message,
-      config: { systemInstruction: 'Eres el asistente oficial de KDO. Ayudas con inscripciones y reglamentos técnicos de karting.' }
+      config: { systemInstruction: 'Eres el asistente oficial de PKN (Pilotos Karting del Norte). Tu objetivo es ayudar a los pilotos con inscripciones, reglamentos técnicos y calendarios de la asociación. Responde de forma deportiva, profesional y concisa.' }
     });
     return response.text;
   },
 
-  // Added chatMessage to handle history from AIChatBot
   async chatMessage(history: { role: string; parts: { text: string }[] }[], message: string) {
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
     const formattedContents = history.map(h => ({
@@ -29,7 +27,7 @@ export const aiService = {
     const response = await ai.models.generateContent({
       model: 'gemini-3-pro-preview',
       contents: formattedContents,
-      config: { systemInstruction: 'Eres el asistente oficial de KDO. Ayudas con inscripciones y reglamentos técnicos de karting.' }
+      config: { systemInstruction: 'Eres el asistente oficial de PKN (Pilotos Karting del Norte). Tu objetivo es ayudar a los pilotos con inscripciones, reglamentos técnicos y calendarios de la asociación.' }
     });
     return response.text;
   },
@@ -41,7 +39,7 @@ export const aiService = {
       contents: [
         { 
           parts: [
-            { text: "Extrae: posición (ranking), número de kart (number), nombre del piloto (name). JSON array." }, 
+            { text: "Extrae de esta planilla de Pilotos Karting del Norte: posición (ranking), número de kart (number), nombre del piloto (name). JSON array." }, 
             { inlineData: { data: base64, mimeType: mime } }
           ] 
         }

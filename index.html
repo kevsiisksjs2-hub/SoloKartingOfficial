@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>KDO - Karting Disciplina Oficial</title>
+    <title>PKN - Pilotos Karting del Norte</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Oswald:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
@@ -15,6 +15,7 @@
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #27272a; border-radius: 10px; }
         @keyframes marquee { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
         .animate-marquee { display: flex; animation: marquee 30s linear infinite; }
+        .selection\:bg-blue-600::selection { background-color: #2563eb; color: white; }
     </style>
     <script type="importmap">
     {
@@ -31,7 +32,7 @@
     }
     </script>
 </head>
-<body>
+<body class="selection:bg-blue-600">
     <div id="root"></div>
 </body>
 </html>
