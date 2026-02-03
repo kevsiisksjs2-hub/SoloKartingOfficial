@@ -18,7 +18,7 @@ export const aiService = {
       model: 'gemini-3-pro-preview',
       contents: formattedContents,
       config: { 
-        systemInstruction: 'Eres el asistente oficial de KDO (Kart Disciplina Oficial). Tu objetivo es ayudar a los pilotos con inscripciones, reglamentos técnicos y calendarios de la asociación.' 
+        systemInstruction: 'Eres el asistente oficial de KDO (Kart Disciplina Oficial). Tu objetivo es ayudar a los pilotos con inscripciones, reglamentos técnicos y calendarios de la asociación. Responde de forma profesional, breve y con terminología de karting.' 
       }
     });
     return response.text;

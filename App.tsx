@@ -21,18 +21,16 @@ const AppContent: React.FC = () => {
   const location = useLocation();
   const path = location.pathname.toLowerCase();
   
-  // Determinamos si estamos en una ruta administrativa o en vivo para ajustar la UI
   const isAdminRoute = path.includes('/adminkdo');
   const isLiveRoute = path.includes('/live');
 
   return (
     <div className="min-h-screen flex flex-col bg-transparent">
-      {/* El Navbar y Footer solo se muestran en la navegación pública */}
       {(!isAdminRoute && !isLiveRoute) && <Navbar />}
       
       <main className="flex-grow">
         <Routes>
-          {/* RUTAS PÚBLICAS (EL PORTAL SIEMPRE ES LO PRIMERO) */}
+          {/* PORTAL PÚBLICO */}
           <Route path="/" element={<Home />} />
           <Route path="/circuitos" element={<Circuitos />} />
           <Route path="/campeonatos" element={<Campeonatos />} />
@@ -43,12 +41,12 @@ const AppContent: React.FC = () => {
           <Route path="/historia" element={<HallOfFame />} />
           <Route path="/live" element={<LiveCenter />} />
           
-          {/* RUTA DE ACCESO AL PANEL (SOLO ACCESIBLE VÍA URL O BOTÓN ESPECÍFICO) */}
+          {/* PORTAL ADMINISTRATIVO */}
           <Route path="/AdminKDO" element={<AdminLogin />} />
           <Route path="/AdminKDO/dashboard" element={<AdminDashboard />} />
           <Route path="/AdminKDO/nuevo-piloto" element={<AdminNewPilot />} />
 
-          {/* Redirección de seguridad al portal público */}
+          {/* Redirección por defecto */}
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </main>

@@ -68,7 +68,6 @@ const AdminDashboard = () => {
 
   return (
     <div className="flex h-screen bg-[#050505] text-zinc-400 font-sans overflow-hidden">
-      {/* SIDEBAR ADMINISTRATIVO REFINADO */}
       <aside className="w-72 bg-black border-r border-white/5 flex flex-col shrink-0 relative overflow-hidden">
         <div className="absolute inset-0 bg-yellow-400/[0.01] pointer-events-none"></div>
         <div className="p-8 border-b border-white/5 flex flex-col items-center relative">
@@ -79,12 +78,6 @@ const AdminDashboard = () => {
           <div className="bg-yellow-400 px-4 py-2 rounded-xl italic font-black text-black text-xl oswald w-full text-center shadow-lg transform -skew-x-2">
             ADMIN <span className="text-white bg-black px-1.5 rounded-sm">KDO</span>
           </div>
-          {currentUser && (
-            <div className="mt-4 flex items-center gap-2 bg-white/5 px-4 py-1.5 rounded-full border border-white/5">
-              <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></div>
-              <span className="text-[9px] font-black uppercase text-zinc-500 tracking-[0.2em]">{currentUser.name}</span>
-            </div>
-          )}
         </div>
 
         <nav className="flex-grow p-5 space-y-1 overflow-y-auto custom-scrollbar relative">
@@ -93,8 +86,6 @@ const AdminDashboard = () => {
             { id: 'tecnica', icon: Wrench, label: 'Escrutinio Técnico' },
             { id: 'disciplina', icon: Gavel, label: 'Comisariato' },
             { id: 'reglamentos', icon: BookOpen, label: 'Normativa' },
-            { id: 'resultados', icon: FileCheck, label: 'Resultados' },
-            { id: 'calendario', icon: Calendar, label: 'Calendario' },
             { id: 'pista', icon: Flag, label: 'Control Pista' },
             { id: 'usuarios', icon: UserCog, label: 'Staff / Usuarios' },
             { id: 'ajustes', icon: Settings, label: 'Configuración' },
@@ -116,7 +107,6 @@ const AdminDashboard = () => {
       </aside>
 
       <main className="flex-grow flex flex-col overflow-hidden relative">
-        {/* SCANLINE EFFECT */}
         <div className="absolute inset-0 pointer-events-none opacity-[0.03] bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.25)_50%),linear-gradient(90deg,rgba(255,0,0,0.06),rgba(0,255,0,0.02),rgba(0,0,255,0.06))] bg-[length:100%_2px,3px_100%]"></div>
         
         <header className="h-24 border-b border-white/5 flex items-center justify-between px-10 bg-black/40 backdrop-blur-3xl shrink-0">
@@ -169,14 +159,12 @@ const AdminDashboard = () => {
                             <td className="px-10 py-7 font-black oswald text-3xl italic text-yellow-400 tracking-tighter">#{p.number}</td>
                             <td className="px-10 py-7">
                                <p className="text-white font-black text-sm uppercase tracking-tight">{p.name}</p>
-                               <p className="text-[9px] text-zinc-700 font-bold uppercase mt-1">Lic: {p.sportsLicense}</p>
                             </td>
                             <td className="px-10 py-7 text-[10px] font-bold text-zinc-500 uppercase tracking-widest">{p.category}</td>
                             <td className="px-10 py-7"><span className={`px-3 py-1.5 rounded-lg text-[9px] font-black uppercase border tracking-widest ${p.status === Status.CONFIRMADO ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20' : 'bg-yellow-400/10 text-yellow-400 border-yellow-400/20'}`}>{p.status}</span></td>
                             <td className="px-10 py-7 text-right">
                                <div className="flex justify-end gap-3 opacity-0 group-hover:opacity-100 transition-all translate-x-4 group-hover:translate-x-0">
                                   <button onClick={() => generatePilotCredential(p)} className="p-3 bg-black/80 border border-white/5 rounded-xl text-zinc-500 hover:text-yellow-400 transition-all hover:scale-110"><IdCard size={18}/></button>
-                                  <button className="p-3 bg-black/80 border border-white/5 rounded-xl text-zinc-500 hover:text-red-500 transition-all hover:scale-110"><Trash2 size={18}/></button>
                                </div>
                             </td>
                          </tr>
@@ -233,7 +221,6 @@ const AdminDashboard = () => {
                       <div className="bg-yellow-400 p-2.5 rounded-xl text-black shadow-lg"><History size={20} /></div>
                       <div>
                         <h3 className="text-xl font-black oswald uppercase text-white italic tracking-widest">Auditoría del Sistema</h3>
-                        <p className="text-[9px] font-black text-zinc-600 uppercase tracking-[0.3em] mt-1">Registro cronológico de operaciones administrativas</p>
                       </div>
                    </div>
                    <div className="divide-y divide-white/[0.03] max-h-[650px] overflow-y-auto custom-scrollbar">
@@ -241,10 +228,9 @@ const AdminDashboard = () => {
                        <div key={log.id} className="p-8 flex items-center justify-between hover:bg-white/[0.01] transition-colors group">
                           <div className="flex items-center gap-10">
                              <div className="flex flex-col items-center">
-                                <span className="text-[11px] font-black text-zinc-400 tabular-nums oswald uppercase">{new Date(log.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
-                                <span className="text-[8px] font-mono text-zinc-700 mt-1">{new Date(log.timestamp).toLocaleDateString()}</span>
+                                <span className="text-[11px] font-black text-zinc-400 tabular-nums oswald uppercase">{new Date(log.timestamp).toLocaleTimeString()}</span>
                              </div>
-                             <div className="bg-black/60 px-4 py-2 rounded-xl border border-white/5 group-hover:border-yellow-400/30 transition-colors">
+                             <div className="bg-black/60 px-4 py-2 rounded-xl border border-white/5">
                                 <span className="text-[9px] font-black text-yellow-400 uppercase tracking-[0.2em]">{log.admin}</span>
                              </div>
                              <div>
@@ -262,7 +248,6 @@ const AdminDashboard = () => {
         </div>
       </main>
 
-      {/* MODAL STAFF KDO */}
       {showUserModal && (
         <div className="fixed inset-0 z-[1000] bg-black/95 backdrop-blur-3xl flex items-center justify-center p-6 animate-in fade-in duration-300">
            <form onSubmit={(e) => { e.preventDefault(); setShowUserModal(false); }} className="glass-panel w-full max-w-md rounded-[3.5rem] p-12 shadow-[0_0_120px_rgba(250,204,21,0.1)] relative border border-white/10">
