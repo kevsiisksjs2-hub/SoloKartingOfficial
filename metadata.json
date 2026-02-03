@@ -1,6 +1,6 @@
 {
-  "name": "PKN - Pilotos Karting del Norte - Pagina de Prueba",
-  "description": "Plataforma de gestión y portal de carreras para Pilotos Karting del Norte (PKN). Prueba",
+  "name": "KDO - Kart Disciplina Oficial",
+  "description": "Plataforma de gestión y portal de carreras para Kart Disciplina Oficial (KDO).",
   "requestFramePermissions": [
     "camera"
   ]

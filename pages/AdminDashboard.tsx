@@ -1,678 +1,289 @@
 
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { storageService } from '../services/storageService';
-import { Pilot, Category, Regulation, Status, RegulationCategory, Championship, Circuit } from '../types';
+import { storageService, ExtendedSystemSettings } from '../services/storageService';
 import { 
-  Users, LogOut, Trash2, X,
-  Search, Settings, FileText, 
-  Plus, Upload, FilePlus, HardDrive,
-  Download, Trophy, FileDown, Filter,
-  Radio, Activity, AlertTriangle, Save,
-  Calendar, MapPin, Image as ImageIcon,
-  ShieldAlert, LayoutGrid, Ruler, Edit2
+  Pilot, AuditLog, TrackFlag, Status, AdminUser
+} from '../types';
+import { 
+  Users, Wrench, Settings, History, LogOut, Trash2, 
+  Search, Plus, Flag, XCircle, ShieldCheck, 
+  Gavel, UserCheck, IdCard, FileCheck, Calendar, BookOpen, UserCog, ChevronRight, Zap, UserPlus, Activity
 } from 'lucide-react';
-import { generatePilotsPDF, generateChampionshipPDF } from '../utils/pdfGenerator';
+import { generatePilotCredential } from '../utils/pdfGenerator';
 
-type Tab = 'inscriptos' | 'reglamentos' | 'campeonatos' | 'circuitos' | 'ajustes';
+type AdminTab = 'pilotos' | 'tecnica' | 'disciplina' | 'reglamentos' | 'resultados' | 'calendario' | 'pista' | 'usuarios' | 'ajustes' | 'logs';
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState<Tab>('inscriptos');
+  const [activeTab, setActiveTab] = useState<AdminTab>('pilotos');
   const [pilots, setPilots] = useState<Pilot[]>([]);
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [regulations, setRegulations] = useState<Regulation[]>([]);
-  const [championships, setChampionships] = useState<Championship[]>([]);
-  const [circuits, setCircuits] = useState<Circuit[]>([]);
+  const [logs, setLogs] = useState<AuditLog[]>([]);
+  const [adminUsers, setAdminUsers] = useState<AdminUser[]>([]);
+  const [currentUser, setCurrentUser] = useState<AdminUser | null>(null);
+  const [settings, setSettings] = useState<ExtendedSystemSettings>(storageService.getSettings());
+  const [trackFlag, setTrackFlag] = useState<TrackFlag>(storageService.getTrackStatus());
   const [searchTerm, setSearchTerm] = useState('');
-  const [categoryFilter, setCategoryFilter] = useState('Todas');
-  const [toast, setToast] = useState<{msg: string, type: 'success' | 'error'} | null>(null);
+  const [showUserModal, setShowUserModal] = useState(false);
 
-  // Estados para ajustes del sistema
-  const [streamingUrl, setStreamingUrl] = useState('');
-  const [liveUrl, setLiveUrl] = useState('');
-  const [newCategoryName, setNewCategoryName] = useState('');
-
-  // Modales
-  const [showRegModal, setShowRegModal] = useState(false);
-  const [newReg, setNewReg] = useState({ 
-    title: '', 
-    description: '', 
-    category: 'Técnico' as RegulationCategory, 
-    fileData: '', 
-    fileName: '' 
-  });
-  
-  const [showChampModal, setShowChampModal] = useState(false);
-  const [newChamp, setNewChamp] = useState({ 
-    name: '', 
-    status: 'En curso', 
-    dates: '', 
-    tracks: '', 
-    image: '' 
-  });
-
-  const [showCircuitModal, setShowCircuitModal] = useState(false);
-  const [editingCircuitId, setEditingCircuitId] = useState<string | null>(null);
-  const [newCircuit, setNewCircuit] = useState({
-    name: '',
-    location: '',
-    length: '',
-    description: '',
-    image: '',
-    features: '' // string separado por comas para facilitar input
-  });
-
-  const [deleteConfirmation, setDeleteConfirmation] = useState<{
-    show: boolean, 
-    type: 'pilot' | 'champ' | 'reg' | 'cat' | 'circuit', 
-    data: any
-  }>({ show: false, type: 'pilot', data: null });
+  const LOGO_URL = "https://api.mundopiloto.com.ar/archivos/2/IMAGENES/ASOCIACIONES/logo_asociacion_2025-06-11T201534737Z.jpg";
 
   useEffect(() => {
-    if (!storageService.getAuth()) {
+    const auth = storageService.getAuth();
+    if (!auth) { 
       navigate('/AdminKDO');
-      return;
+      return; 
     }
+    setCurrentUser(auth);
     refreshData();
   }, [navigate]);
 
   const refreshData = () => {
     setPilots(storageService.getPilots());
-    setCategories(storageService.getCategories());
-    setRegulations(storageService.getRegulations());
-    setChampionships(storageService.getChampionships());
-    setCircuits(storageService.getCircuits());
-    setStreamingUrl(storageService.getStreamingUrl());
-    setLiveUrl(storageService.getLiveUrl());
+    setLogs(storageService.getAuditLogs());
+    setAdminUsers(storageService.getAdminUsers());
+    setSettings(storageService.getSettings());
+    setTrackFlag(storageService.getTrackStatus());
   };
 
-  const notify = (msg: string, type: 'success' | 'error' = 'success') => {
-    setToast({ msg, type });
-    setTimeout(() => setToast(null), 3000);
+  const handleFlagChange = (f: TrackFlag) => {
+    storageService.saveTrackStatus(f);
+    storageService.addLog('RACE_CONTROL', `Cambio de bandera: ${f}`);
+    setTrackFlag(f);
   };
 
-  const handleStatusChange = (id: string, newStatus: Status) => {
-    const updated = pilots.map(p => p.id === id ? { ...p, status: newStatus } : p);
-    storageService.savePilots(updated);
-    setPilots(updated);
-    notify(`Estado actualizado a: ${newStatus}`);
+  const handleDeleteUser = (id: string) => {
+    if (currentUser?.id === id) return alert("No puedes eliminar tu propio usuario.");
+    if (!confirm("¿Eliminar este miembro del staff?")) return;
+    const updated = adminUsers.filter(u => u.id !== id);
+    storageService.saveAdminUsers(updated);
+    storageService.addLog('USERS', `Usuario eliminado ID: ${id}`);
+    setAdminUsers(updated);
   };
 
-  const openDeleteConfirmation = (type: 'pilot' | 'champ' | 'reg' | 'cat' | 'circuit', data: any) => {
-    setDeleteConfirmation({ show: true, type, data });
+  const handleLogout = () => {
+    storageService.setAuth(null);
+    navigate('/');
   };
-
-  const confirmDeletion = () => {
-    if (!deleteConfirmation.data) return;
-
-    if (deleteConfirmation.type === 'pilot') {
-      const upd = pilots.filter(x => x.id !== deleteConfirmation.data.id);
-      storageService.savePilots(upd);
-      setPilots(upd);
-      notify("PILOTO ELIMINADO", "error");
-    } else if (deleteConfirmation.type === 'champ') {
-      const upd = championships.filter(x => x.id !== deleteConfirmation.data.id);
-      storageService.saveChampionships(upd);
-      setChampionships(upd);
-      notify("CAMPEONATO ELIMINADO", "error");
-    } else if (deleteConfirmation.type === 'reg') {
-      const upd = regulations.filter(x => x.id !== deleteConfirmation.data.id);
-      storageService.saveRegulations(upd);
-      setRegulations(upd);
-      notify("REGLAMENTO ELIMINADO", "error");
-    } else if (deleteConfirmation.type === 'cat') {
-      const upd = categories.filter(c => c !== deleteConfirmation.data);
-      storageService.saveCategories(upd);
-      setCategories(upd);
-      notify("CATEGORÍA ELIMINADA", "error");
-    } else if (deleteConfirmation.type === 'circuit') {
-      const upd = circuits.filter(x => x.id !== deleteConfirmation.data.id);
-      storageService.saveCircuits(upd);
-      setCircuits(upd);
-      notify("CIRCUITO ELIMINADO", "error");
-    }
-    
-    setDeleteConfirmation({ show: false, type: 'pilot', data: null });
-  };
-
-  const handleExportInscriptos = () => {
-    const toExport = pilots.filter(p => categoryFilter === 'Todas' || p.category === categoryFilter);
-    if (toExport.length === 0) return notify("No hay pilotos registrados", "error");
-    generatePilotsPDF(toExport, categoryFilter === 'Todas' ? 'LISTADO GENERAL' : `INSCRIPTOS - ${categoryFilter}`, categoryFilter === 'Todas' ? undefined : categoryFilter);
-    notify("Planilla PDF Generada");
-  };
-
-  const handleSaveSystemSettings = () => {
-    storageService.saveStreamingUrl(streamingUrl);
-    storageService.saveLiveUrl(liveUrl);
-    notify("Ajustes de sistema actualizados");
-  };
-
-  const handleAddCategory = () => {
-    if (!newCategoryName.trim()) return;
-    if (categories.includes(newCategoryName.trim())) {
-      notify("La categoría ya existe", "error");
-      return;
-    }
-    const updated = [...categories, newCategoryName.trim()];
-    storageService.saveCategories(updated);
-    setCategories(updated);
-    setNewCategoryName('');
-    notify("Categoría añadida con éxito");
-  };
-
-  const handleSaveChamp = () => {
-    if (!newChamp.name || !newChamp.dates || !newChamp.tracks) {
-      notify("Complete los campos requeridos", "error");
-      return;
-    }
-    const champ: Championship = {
-      id: Math.random().toString(36).substr(2, 9),
-      ...newChamp,
-      image: newChamp.image || 'https://images.unsplash.com/photo-1547631618-f29792042761?w=800'
-    };
-    const updated = [...championships, champ];
-    storageService.saveChampionships(updated);
-    setChampionships(updated);
-    setShowChampModal(false);
-    setNewChamp({ name: '', status: 'En curso', dates: '', tracks: '', image: '' });
-    notify("Campeonato registrado");
-  };
-
-  const handleSaveCircuit = () => {
-    if (!newCircuit.name || !newCircuit.location || !newCircuit.length) {
-      notify("Complete los campos requeridos", "error");
-      return;
-    }
-    
-    const circuitData: Circuit = {
-      id: editingCircuitId || Math.random().toString(36).substr(2, 9),
-      name: newCircuit.name,
-      location: newCircuit.location,
-      length: newCircuit.length,
-      description: newCircuit.description,
-      image: newCircuit.image || 'https://images.unsplash.com/photo-1547631618-f29792042761?w=800',
-      features: newCircuit.features.split(',').map(f => f.trim()).filter(f => f !== '')
-    };
-
-    let updated: Circuit[];
-    if (editingCircuitId) {
-      updated = circuits.map(c => c.id === editingCircuitId ? circuitData : c);
-    } else {
-      updated = [...circuits, circuitData];
-    }
-
-    storageService.saveCircuits(updated);
-    setCircuits(updated);
-    setShowCircuitModal(false);
-    setEditingCircuitId(null);
-    setNewCircuit({ name: '', location: '', length: '', description: '', image: '', features: '' });
-    notify(editingCircuitId ? "Circuito actualizado" : "Circuito registrado");
-  };
-
-  const openEditCircuit = (c: Circuit) => {
-    setEditingCircuitId(c.id);
-    setNewCircuit({
-      name: c.name,
-      location: c.location,
-      length: c.length,
-      description: c.description,
-      image: c.image,
-      features: c.features.join(', ')
-    });
-    setShowCircuitModal(true);
-  };
-
-  const handleSaveRegulation = () => {
-    if (!newReg.title || !newReg.fileData) {
-      notify("Título y archivo PDF son obligatorios", "error");
-      return;
-    }
-    const reg: Regulation = {
-      id: Math.random().toString(36).substr(2, 9),
-      title: newReg.title,
-      description: newReg.description,
-      category: newReg.category,
-      fileData: newReg.fileData,
-      fileName: newReg.fileName,
-      fileSize: (newReg.fileData.length / 1024 / 1024).toFixed(1) + ' MB',
-      date: new Date().toLocaleDateString()
-    };
-    const updated = [reg, ...regulations];
-    storageService.saveRegulations(updated);
-    setRegulations(updated);
-    setShowRegModal(false);
-    setNewReg({ title: '', description: '', category: 'Técnico', fileData: '', fileName: '' });
-    notify("Normativa publicada");
-  };
-
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = () => {
-      setNewReg({ ...newReg, fileData: reader.result as string, fileName: file.name });
-    };
-    reader.readAsDataURL(file);
-  };
-
-  const filteredPilots = pilots.filter(p => {
-    const matchesSearch = p.name.toLowerCase().includes(searchTerm.toLowerCase()) || p.number.includes(searchTerm);
-    const matchesCategory = categoryFilter === 'Todas' || p.category === categoryFilter;
-    return matchesSearch && matchesCategory;
-  });
 
   return (
     <div className="flex h-screen bg-[#050505] text-zinc-400 font-sans overflow-hidden">
-      {/* Sistema de Notificaciones */}
-      {toast && (
-        <div className={`fixed top-8 right-8 px-8 py-4 rounded-2xl z-[500] font-black oswald flex items-center gap-3 shadow-2xl animate-in slide-in-from-right-8 duration-300 ${toast.type === 'success' ? 'bg-blue-600 text-white' : 'bg-red-600 text-white'}`}>
-          {toast.msg.toUpperCase()}
-        </div>
-      )}
-      
-      {/* Sidebar de Navegación */}
-      <aside className="w-80 bg-[#0a0a0a] border-r border-zinc-900 flex flex-col shrink-0">
-        <div className="p-8 border-b border-zinc-900">
-          <div className="bg-blue-600 px-4 py-3 rounded-xl italic font-black text-white text-2xl oswald mb-2 text-center shadow-xl shadow-blue-600/10">
-            ADMIN <span className="text-black bg-white px-2 rounded-sm text-sm ml-1">PKN</span>
+      {/* SIDEBAR ADMINISTRATIVO REFINADO */}
+      <aside className="w-72 bg-black border-r border-white/5 flex flex-col shrink-0 relative overflow-hidden">
+        <div className="absolute inset-0 bg-yellow-400/[0.01] pointer-events-none"></div>
+        <div className="p-8 border-b border-white/5 flex flex-col items-center relative">
+          <div className="relative mb-6">
+            <div className="absolute inset-0 bg-yellow-400/20 blur-2xl rounded-full scale-110"></div>
+            <img src={LOGO_URL} alt="KDO" className="w-16 h-16 rounded-full border-2 border-yellow-400 relative z-10 bg-white object-contain p-1.5" />
           </div>
-          <p className="text-[9px] font-black uppercase text-zinc-600 tracking-[0.3em] text-center mt-3">Sistema de Gestión Oficial</p>
+          <div className="bg-yellow-400 px-4 py-2 rounded-xl italic font-black text-black text-xl oswald w-full text-center shadow-lg transform -skew-x-2">
+            ADMIN <span className="text-white bg-black px-1.5 rounded-sm">KDO</span>
+          </div>
+          {currentUser && (
+            <div className="mt-4 flex items-center gap-2 bg-white/5 px-4 py-1.5 rounded-full border border-white/5">
+              <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></div>
+              <span className="text-[9px] font-black uppercase text-zinc-500 tracking-[0.2em]">{currentUser.name}</span>
+            </div>
+          )}
         </div>
 
-        <nav className="flex-grow p-6 space-y-3">
+        <nav className="flex-grow p-5 space-y-1 overflow-y-auto custom-scrollbar relative">
           {[
-            { id: 'inscriptos', icon: Users, label: 'Inscriptos' },
-            { id: 'reglamentos', icon: FileText, label: 'Reglamentos' },
-            { id: 'campeonatos', icon: Trophy, label: 'Campeonatos' },
-            { id: 'circuitos', icon: MapPin, label: 'Circuitos' },
-            { id: 'ajustes', icon: Settings, label: 'Sistema' },
+            { id: 'pilotos', icon: Users, label: 'Padrón Oficial' },
+            { id: 'tecnica', icon: Wrench, label: 'Escrutinio Técnico' },
+            { id: 'disciplina', icon: Gavel, label: 'Comisariato' },
+            { id: 'reglamentos', icon: BookOpen, label: 'Normativa' },
+            { id: 'resultados', icon: FileCheck, label: 'Resultados' },
+            { id: 'calendario', icon: Calendar, label: 'Calendario' },
+            { id: 'pista', icon: Flag, label: 'Control Pista' },
+            { id: 'usuarios', icon: UserCog, label: 'Staff / Usuarios' },
+            { id: 'ajustes', icon: Settings, label: 'Configuración' },
+            { id: 'logs', icon: History, label: 'Auditoría' }
           ].map(tab => (
-            <button 
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id as Tab)} 
-              className={`w-full flex items-center gap-4 px-6 py-4 rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all ${activeTab === tab.id ? 'bg-blue-600 text-white shadow-2xl shadow-blue-600/20' : 'hover:bg-zinc-900 text-zinc-500 hover:text-white'}`}
-            >
-              <tab.icon size={18} /> {tab.label}
+            <button key={tab.id} onClick={() => setActiveTab(tab.id as AdminTab)} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all group ${activeTab === tab.id ? 'bg-yellow-400 text-black shadow-xl shadow-yellow-400/20 translate-x-1' : 'hover:bg-white/5 text-zinc-600 hover:text-zinc-200'}`}>
+              <tab.icon size={18} className={activeTab === tab.id ? 'text-black' : 'group-hover:text-yellow-400 transition-colors'} /> 
+              {tab.label}
+              {activeTab === tab.id && <ChevronRight size={14} className="ml-auto opacity-40 animate-in fade-in slide-in-from-left-2" />}
             </button>
           ))}
         </nav>
 
-        <div className="p-8 border-t border-zinc-900">
-          <button 
-            onClick={() => { storageService.setAuth(null); navigate('/AdminKDO'); }} 
-            className="w-full flex items-center justify-center gap-3 bg-zinc-900 text-zinc-500 hover:text-white px-4 py-4 rounded-xl text-[10px] font-black uppercase transition-all"
-          >
-            <LogOut size={16} /> Cerrar Sesión
-          </button>
+        <div className="p-6 border-t border-white/5 bg-black/50">
+           <button onClick={handleLogout} className="w-full flex items-center justify-center gap-3 px-6 py-4 rounded-2xl bg-zinc-900/50 text-red-500 font-black uppercase text-[10px] tracking-widest hover:bg-red-600 hover:text-white transition-all shadow-lg border border-red-900/10">
+             <LogOut size={16} /> Finalizar Sesión
+           </button>
         </div>
       </aside>
 
-      {/* Área Principal */}
-      <main className="flex-grow flex flex-col bg-black overflow-hidden relative">
-        <header className="h-28 border-b border-zinc-900 flex items-center justify-between px-12 bg-zinc-950/50 backdrop-blur-2xl shrink-0">
-          <div className="flex items-center gap-4">
-             <div className="h-12 w-1.5 bg-blue-600 rounded-full"></div>
-             <h2 className="text-4xl font-black oswald uppercase text-white italic tracking-tighter">
-                {activeTab === 'inscriptos' ? 'Control de Pilotos' : 
-                 activeTab === 'reglamentos' ? 'Normativas y Leyes' : 
-                 activeTab === 'campeonatos' ? 'Gestión de Temporadas' : 
-                 activeTab === 'circuitos' ? 'Trazados de Pista' :
-                 'Ajustes del Sistema'}
-             </h2>
-          </div>
+      <main className="flex-grow flex flex-col overflow-hidden relative">
+        {/* SCANLINE EFFECT */}
+        <div className="absolute inset-0 pointer-events-none opacity-[0.03] bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.25)_50%),linear-gradient(90deg,rgba(255,0,0,0.06),rgba(0,255,0,0.02),rgba(0,0,255,0.06))] bg-[length:100%_2px,3px_100%]"></div>
+        
+        <header className="h-24 border-b border-white/5 flex items-center justify-between px-10 bg-black/40 backdrop-blur-3xl shrink-0">
+           <div className="flex items-center gap-6">
+              <div className="h-10 w-1.5 bg-yellow-400 rounded-full shadow-[0_0_20px_rgba(250,204,21,0.5)]"></div>
+              <h2 className="text-3xl font-black oswald uppercase text-white italic tracking-tighter">{activeTab.toUpperCase()}</h2>
+           </div>
+           
+           <div className="flex items-center gap-3 bg-black/60 p-2.5 rounded-2xl border border-white/5 shadow-2xl">
+             {[TrackFlag.VERDE, TrackFlag.AMARILLA, TrackFlag.ROJA].map(f => (
+               <button 
+                 key={f} 
+                 onClick={() => handleFlagChange(f)} 
+                 className={`w-11 h-11 rounded-xl transition-all flex items-center justify-center shadow-lg ${trackFlag === f ? 'scale-110' : 'opacity-20 grayscale hover:opacity-100 hover:grayscale-0'} ${f === TrackFlag.VERDE ? 'bg-emerald-500' : f === TrackFlag.AMARILLA ? 'bg-yellow-400 text-black' : 'bg-red-600'}`}
+                 title={f}
+               >
+                 <Flag size={20} />
+               </button>
+             ))}
+           </div>
         </header>
 
-        <div className="flex-grow overflow-auto p-12 custom-scrollbar">
-          
-          {/* SECCIÓN PILOTOS */}
-          {activeTab === 'inscriptos' && (
-            <div className="space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-500">
-              <div className="flex flex-col xl:flex-row gap-6 justify-between items-center">
-                 <div className="flex gap-4 w-full xl:w-auto">
-                    <div className="relative flex-grow xl:w-80">
-                       <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-600" size={18} />
-                       <input 
-                         type="text" 
-                         placeholder="BUSCAR POR NOMBRE O #..." 
-                         value={searchTerm} 
-                         onChange={e => setSearchTerm(e.target.value)} 
-                         className="w-full bg-zinc-900 border border-zinc-800 rounded-2xl py-4 pl-12 pr-4 text-white text-xs font-bold outline-none focus:border-blue-600 transition-all uppercase" 
-                       />
-                    </div>
-                    <div className="relative w-full xl:w-64">
-                       <Filter className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-600" size={18} />
-                       <select 
-                         value={categoryFilter} 
-                         onChange={(e) => setCategoryFilter(e.target.value)} 
-                         className="w-full bg-zinc-900 border border-zinc-800 rounded-2xl py-4 pl-12 pr-6 text-white text-xs font-black outline-none transition-all uppercase appearance-none cursor-pointer"
-                       >
-                          <option value="Todas">Todas las Categorías</option>
-                          {categories.map(cat => <option key={cat} value={cat}>{cat}</option>)}
-                       </select>
-                    </div>
-                 </div>
-                 
-                 <div className="flex gap-4 w-full xl:w-auto">
-                    <button 
-                      onClick={handleExportInscriptos} 
-                      className="flex-grow bg-zinc-900 text-white border border-zinc-800 px-8 py-4 rounded-2xl font-black uppercase text-[10px] flex items-center justify-center gap-3 hover:bg-zinc-800 transition-all shadow-xl"
-                    >
-                       <FileDown size={18} /> Exportar Planilla
-                    </button>
-                    <button 
-                      onClick={() => navigate('/AdminKDO/nuevo-piloto')} 
-                      className="flex-grow bg-blue-600 text-white px-8 py-4 rounded-2xl font-black uppercase text-[10px] flex items-center justify-center gap-3 shadow-2xl shadow-blue-600/20 hover:bg-blue-700 transition-all"
-                    >
-                       <Plus size={18} /> Nuevo Piloto
-                    </button>
-                 </div>
-              </div>
-
-              <div className="bg-zinc-900/50 border border-zinc-800 rounded-[2.5rem] overflow-hidden shadow-2xl">
-                <table className="w-full text-left">
-                  <thead className="bg-zinc-950 text-[10px] font-black uppercase text-zinc-500 border-b border-zinc-800 tracking-[0.2em]">
-                    <tr>
-                      <th className="px-10 py-6">Dorsal</th>
-                      <th className="px-10 py-6">Piloto</th>
-                      <th className="px-10 py-6">Categoría</th>
-                      <th className="px-10 py-6">Estado</th>
-                      <th className="px-10 py-6 text-right">Acciones</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-zinc-800/50">
-                    {filteredPilots.map(p => (
-                      <tr key={p.id} className="hover:bg-white/[0.02] transition-all group">
-                        <td className="px-10 py-6 font-black text-blue-600 oswald italic text-3xl">#{p.number}</td>
-                        <td className="px-10 py-6">
-                           <p className="font-black text-white uppercase text-sm tracking-tight">{p.name}</p>
-                           <p className="text-[8px] font-bold text-zinc-600 uppercase tracking-widest">{p.association || 'PILOTO FEDERADO'}</p>
-                        </td>
-                        <td className="px-10 py-6">
-                           <span className="text-[10px] text-zinc-400 font-black uppercase border border-zinc-800 px-3 py-1.5 rounded-xl">{p.category}</span>
-                        </td>
-                        <td className="px-10 py-6">
-                           <select 
-                             value={p.status} 
-                             onChange={(e) => handleStatusChange(p.id, e.target.value as Status)} 
-                             className={`text-[9px] font-black uppercase px-4 py-2 rounded-xl border outline-none cursor-pointer transition-all ${p.status === Status.CONFIRMADO ? 'bg-emerald-600/10 text-emerald-500 border-emerald-500/20' : 'bg-yellow-600/10 text-yellow-500 border-yellow-500/20'}`}
-                           >
-                              <option value={Status.CONFIRMADO}>Confirmado</option>
-                              <option value={Status.PENDIENTE}>Pendiente</option>
-                              <option value={Status.BAJA}>De Baja</option>
-                           </select>
-                        </td>
-                        <td className="px-10 py-6 text-right">
-                           <button 
-                             onClick={() => openDeleteConfirmation('pilot', p)} 
-                             className="p-4 text-zinc-800 hover:text-red-500 hover:bg-red-500/10 rounded-2xl transition-all"
-                             title="Eliminar permanentemente"
-                           >
-                             <Trash2 size={18} />
-                           </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          )}
-
-          {/* SECCIÓN REGLAMENTOS */}
-          {activeTab === 'reglamentos' && (
-            <div className="space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-500">
-               <div className="flex flex-col md:flex-row justify-between items-center gap-6">
-                  <div>
-                    <h3 className="text-xl font-black oswald uppercase text-white tracking-widest">Base Normativa</h3>
-                    <p className="text-[10px] font-black uppercase text-zinc-600 mt-1 tracking-widest">{regulations.length} Documentos en línea</p>
+        <div className="flex-grow overflow-auto p-10 custom-scrollbar bg-black/20">
+          {activeTab === 'pilotos' && (
+            <div className="space-y-8 animate-in fade-in slide-in-from-bottom-3 duration-500">
+               <div className="flex justify-between items-center gap-6 glass-panel p-6 rounded-[2.5rem]">
+                  <div className="relative flex-grow max-w-xl">
+                    <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-zinc-600" size={18} />
+                    <input 
+                      type="text" 
+                      placeholder="FILTRAR REGISTRO..." 
+                      className="w-full bg-black/40 border border-white/10 rounded-2xl py-4.5 pl-14 pr-6 text-white font-bold text-xs outline-none focus:border-yellow-400 uppercase tracking-[0.2em] transition-all" 
+                      value={searchTerm} 
+                      onChange={e => setSearchTerm(e.target.value)} 
+                    />
                   </div>
-                  <button onClick={() => setShowRegModal(true)} className="w-full md:w-auto bg-blue-600 text-white px-10 py-5 rounded-2xl font-black uppercase text-[11px] flex items-center justify-center gap-3 shadow-2xl shadow-blue-600/20">
-                     <FilePlus size={20} /> Publicar Nueva Ley
+                  <button onClick={() => navigate('/AdminKDO/nuevo-piloto')} className="bg-yellow-400 text-black px-10 py-4.5 rounded-xl font-black uppercase text-[10px] flex items-center gap-3 hover:bg-white transition-all shadow-xl shadow-yellow-400/10 active:scale-95">
+                    <Plus size={18} /> Alta de Piloto
                   </button>
                </div>
 
-               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
-                  {regulations.map(reg => (
-                    <div key={reg.id} className="bg-zinc-900 border border-zinc-800 p-10 rounded-[3rem] flex flex-col h-full hover:border-blue-600 transition-all relative group shadow-2xl">
-                       <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:opacity-10 transition-opacity">
-                          <FileText size={100} />
+               <div className="glass-panel rounded-[3rem] overflow-hidden shadow-2xl border border-white/5">
+                  <table className="w-full text-left">
+                    <thead className="bg-black/80 text-[10px] font-black uppercase text-zinc-600 border-b border-white/5 tracking-[0.3em]">
+                       <tr><th className="px-10 py-6">Dorsal</th><th className="px-10 py-6">Piloto</th><th className="px-10 py-6">Categoría</th><th className="px-10 py-6">Status</th><th className="px-10 py-6 text-right">Acción</th></tr>
+                    </thead>
+                    <tbody className="divide-y divide-white/[0.03]">
+                       {pilots.filter(p => p.name.toUpperCase().includes(searchTerm.toUpperCase()) || p.number.includes(searchTerm)).map(p => (
+                         <tr key={p.id} className="hover:bg-white/[0.02] group transition-all">
+                            <td className="px-10 py-7 font-black oswald text-3xl italic text-yellow-400 tracking-tighter">#{p.number}</td>
+                            <td className="px-10 py-7">
+                               <p className="text-white font-black text-sm uppercase tracking-tight">{p.name}</p>
+                               <p className="text-[9px] text-zinc-700 font-bold uppercase mt-1">Lic: {p.sportsLicense}</p>
+                            </td>
+                            <td className="px-10 py-7 text-[10px] font-bold text-zinc-500 uppercase tracking-widest">{p.category}</td>
+                            <td className="px-10 py-7"><span className={`px-3 py-1.5 rounded-lg text-[9px] font-black uppercase border tracking-widest ${p.status === Status.CONFIRMADO ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20' : 'bg-yellow-400/10 text-yellow-400 border-yellow-400/20'}`}>{p.status}</span></td>
+                            <td className="px-10 py-7 text-right">
+                               <div className="flex justify-end gap-3 opacity-0 group-hover:opacity-100 transition-all translate-x-4 group-hover:translate-x-0">
+                                  <button onClick={() => generatePilotCredential(p)} className="p-3 bg-black/80 border border-white/5 rounded-xl text-zinc-500 hover:text-yellow-400 transition-all hover:scale-110"><IdCard size={18}/></button>
+                                  <button className="p-3 bg-black/80 border border-white/5 rounded-xl text-zinc-500 hover:text-red-500 transition-all hover:scale-110"><Trash2 size={18}/></button>
+                               </div>
+                            </td>
+                         </tr>
+                       ))}
+                    </tbody>
+                  </table>
+               </div>
+            </div>
+          )}
+
+          {activeTab === 'usuarios' && (
+            <div className="space-y-10 animate-in fade-in duration-500">
+               <div className="flex justify-between items-end mb-8">
+                  <div>
+                    <h3 className="text-3xl font-black oswald uppercase text-white italic tracking-tighter">Equipo de <span className="text-yellow-400">Staff Administrativo</span></h3>
+                    <p className="text-[10px] font-black uppercase text-zinc-600 tracking-[0.4em] mt-2">Control de privilegios y accesos de seguridad</p>
+                  </div>
+                  <button onClick={() => setShowUserModal(true)} className="bg-yellow-400 text-black px-10 py-4.5 rounded-xl font-black uppercase text-[10px] flex items-center gap-3 shadow-xl shadow-yellow-400/10 active:scale-95 transition-all">
+                    <UserPlus size={18} /> Nuevo Acceso
+                  </button>
+               </div>
+
+               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                  {adminUsers.map(user => (
+                    <div key={user.id} className="glass-panel p-10 rounded-[3.5rem] relative group hover:border-yellow-400/50 transition-all shadow-2xl overflow-hidden border border-white/5">
+                       <div className="absolute top-0 right-0 p-10 opacity-[0.03] rotate-12 group-hover:opacity-[0.08] transition-all translate-x-4 -translate-y-4"><Zap size={140} /></div>
+                       <div className="flex items-center gap-6 mb-10">
+                          <div className="bg-black p-5 rounded-[1.5rem] border border-white/10 text-yellow-400 shadow-xl group-hover:scale-110 transition-transform">
+                             <UserCheck size={32} />
+                          </div>
+                          <div>
+                             <h4 className="text-white font-black oswald uppercase text-2xl italic tracking-tighter">{user.name}</h4>
+                             <p className="text-[10px] font-mono text-zinc-600 uppercase tracking-[0.2em] mt-1">ID: {user.username}</p>
+                          </div>
                        </div>
-                       <div className="flex justify-between items-start mb-8">
-                          <span className={`px-4 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest border ${reg.category === 'Técnico' ? 'bg-red-600/10 text-red-500 border-red-500/20' : 'bg-blue-600/10 text-blue-500 border-blue-500/20'}`}>
-                             {reg.category}
+                       <div className="flex items-center justify-between pt-8 border-t border-white/5">
+                          <span className={`px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-[0.2em] border ${user.role === 'SuperAdmin' ? 'bg-red-500/10 text-red-500 border-red-500/20' : 'bg-blue-500/10 text-blue-500 border-blue-500/20'}`}>
+                             {user.role}
                           </span>
-                          <button onClick={() => openDeleteConfirmation('reg', reg)} className="text-zinc-800 hover:text-red-500 transition-colors">
-                             <Trash2 size={20} />
+                          <button onClick={() => handleDeleteUser(user.id)} className="p-3 bg-black/50 border border-white/5 rounded-xl text-zinc-700 hover:text-red-500 transition-all hover:bg-red-600/10">
+                             <Trash2 size={18} />
                           </button>
                        </div>
-                       <h4 className="text-2xl font-black text-white uppercase oswald italic mb-6 leading-tight flex-grow tracking-tighter">
-                          {reg.title}
-                       </h4>
-                       <div className="pt-8 border-t border-zinc-800 flex justify-between items-center">
-                          <div className="flex flex-col gap-1">
-                             <span className="text-[9px] font-black text-zinc-600 uppercase tracking-widest">{reg.date}</span>
-                             <span className="text-[8px] font-bold text-zinc-700 uppercase">{reg.fileSize}</span>
-                          </div>
-                          <a href={reg.fileData} download={reg.fileName} className="bg-zinc-950 p-4 rounded-2xl border border-zinc-800 text-blue-500 hover:bg-blue-600 hover:text-white transition-all shadow-lg">
-                             <Download size={20} />
-                          </a>
-                       </div>
                     </div>
                   ))}
                </div>
             </div>
           )}
 
-          {/* SECCIÓN CAMPEONATOS */}
-          {activeTab === 'campeonatos' && (
-            <div className="space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-500">
-               <div className="flex flex-col md:flex-row justify-between items-center gap-6">
-                  <div>
-                    <h3 className="text-xl font-black oswald uppercase text-white tracking-widest">Torneos y Temporadas</h3>
-                    <p className="text-[10px] font-black uppercase text-zinc-600 mt-1 tracking-widest">Gestión de eventos oficiales PKN</p>
-                  </div>
-                  <button onClick={() => setShowChampModal(true)} className="w-full md:w-auto bg-blue-600 text-white px-10 py-5 rounded-2xl font-black uppercase text-[11px] flex items-center justify-center gap-3 shadow-2xl shadow-blue-600/20">
-                     <Plus size={20} /> Crear Campeonato
-                  </button>
-               </div>
-
-               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
-                  {championships.map(ch => (
-                    <div key={ch.id} className="bg-zinc-900 border border-zinc-800 rounded-[3rem] overflow-hidden flex flex-col hover:border-blue-600 transition-all group shadow-2xl relative">
-                       <div className="h-56 relative overflow-hidden">
-                          <img src={ch.image} alt={ch.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000 opacity-60 group-hover:opacity-100 grayscale-[50%] group-hover:grayscale-0" />
-                          <div className="absolute inset-0 bg-gradient-to-t from-zinc-900 via-transparent to-transparent"></div>
-                          <div className="absolute top-6 right-6 flex gap-2">
-                             <button onClick={() => openDeleteConfirmation('champ', ch)} className="p-3 bg-black/80 backdrop-blur-xl hover:bg-red-600 text-white rounded-2xl transition-all shadow-2xl border border-white/5"><Trash2 size={18}/></button>
+          {activeTab === 'logs' && (
+             <div className="space-y-8 animate-in fade-in duration-500">
+                <div className="glass-panel rounded-[3.5rem] overflow-hidden shadow-2xl border border-white/5">
+                   <div className="p-10 border-b border-white/5 flex items-center gap-5 bg-black/40">
+                      <div className="bg-yellow-400 p-2.5 rounded-xl text-black shadow-lg"><History size={20} /></div>
+                      <div>
+                        <h3 className="text-xl font-black oswald uppercase text-white italic tracking-widest">Auditoría del Sistema</h3>
+                        <p className="text-[9px] font-black text-zinc-600 uppercase tracking-[0.3em] mt-1">Registro cronológico de operaciones administrativas</p>
+                      </div>
+                   </div>
+                   <div className="divide-y divide-white/[0.03] max-h-[650px] overflow-y-auto custom-scrollbar">
+                     {logs.map(log => (
+                       <div key={log.id} className="p-8 flex items-center justify-between hover:bg-white/[0.01] transition-colors group">
+                          <div className="flex items-center gap-10">
+                             <div className="flex flex-col items-center">
+                                <span className="text-[11px] font-black text-zinc-400 tabular-nums oswald uppercase">{new Date(log.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+                                <span className="text-[8px] font-mono text-zinc-700 mt-1">{new Date(log.timestamp).toLocaleDateString()}</span>
+                             </div>
+                             <div className="bg-black/60 px-4 py-2 rounded-xl border border-white/5 group-hover:border-yellow-400/30 transition-colors">
+                                <span className="text-[9px] font-black text-yellow-400 uppercase tracking-[0.2em]">{log.admin}</span>
+                             </div>
+                             <div>
+                                <p className="text-white font-black uppercase text-[10px] tracking-tight group-hover:text-yellow-400 transition-colors">{log.action}</p>
+                                <p className="text-[9px] text-zinc-600 mt-1.5 uppercase font-medium max-w-lg leading-relaxed">{log.details}</p>
+                             </div>
                           </div>
-                          <div className="absolute bottom-6 left-8"><span className={`text-[8px] font-black uppercase px-3 py-1 rounded-lg border backdrop-blur-md ${ch.status === 'En curso' ? 'bg-emerald-600/20 text-emerald-400 border-emerald-400/30' : 'bg-blue-600/20 text-blue-400 border-blue-400/30'}`}>{ch.status}</span></div>
+                          <Activity className="text-zinc-800 opacity-20 group-hover:opacity-100 group-hover:text-emerald-500 transition-all" size={20} />
                        </div>
-                       <div className="p-10 flex-grow flex flex-col">
-                          <h4 className="text-2xl font-black oswald uppercase text-white italic tracking-tighter mb-6 group-hover:text-blue-500 transition-colors">{ch.name}</h4>
-                          <div className="mt-auto space-y-3">
-                             <div className="flex items-center gap-3 text-zinc-500 text-[10px] font-black uppercase tracking-widest"><Calendar size={16} className="text-blue-600" /> {ch.dates}</div>
-                             <div className="flex items-center gap-3 text-zinc-500 text-[10px] font-black uppercase tracking-widest"><MapPin size={16} className="text-blue-600" /> {ch.tracks}</div>
-                          </div>
-                       </div>
-                    </div>
-                  ))}
-               </div>
-            </div>
-          )}
-
-          {/* SECCIÓN CIRCUITOS */}
-          {activeTab === 'circuitos' && (
-            <div className="space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-500">
-               <div className="flex flex-col md:flex-row justify-between items-center gap-6">
-                  <div>
-                    <h3 className="text-xl font-black oswald uppercase text-white tracking-widest">Gestión de Circuitos</h3>
-                    <p className="text-[10px] font-black uppercase text-zinc-600 mt-1 tracking-widest">{circuits.length} Trazados habilitados</p>
-                  </div>
-                  <button onClick={() => { setEditingCircuitId(null); setNewCircuit({name:'', location:'', length:'', description:'', image:'', features:''}); setShowCircuitModal(true); }} className="w-full md:w-auto bg-blue-600 text-white px-10 py-5 rounded-2xl font-black uppercase text-[11px] flex items-center justify-center gap-3 shadow-2xl shadow-blue-600/20">
-                     <Plus size={20} /> Añadir Circuito
-                  </button>
-               </div>
-
-               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
-                  {circuits.map(c => (
-                    <div key={c.id} className="bg-zinc-900 border border-zinc-800 rounded-[3rem] overflow-hidden flex flex-col hover:border-blue-600 transition-all group shadow-2xl relative">
-                       <div className="h-56 relative overflow-hidden">
-                          <img src={c.image} alt={c.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000 opacity-60 group-hover:opacity-100 grayscale-[50%] group-hover:grayscale-0" />
-                          <div className="absolute inset-0 bg-gradient-to-t from-zinc-900 via-transparent to-transparent"></div>
-                          <div className="absolute top-6 right-6 flex gap-2">
-                             <button onClick={() => openEditCircuit(c)} className="p-3 bg-black/80 backdrop-blur-xl hover:bg-blue-600 text-white rounded-2xl transition-all shadow-2xl border border-white/5"><Edit2 size={18}/></button>
-                             <button onClick={() => openDeleteConfirmation('circuit', c)} className="p-3 bg-black/80 backdrop-blur-xl hover:bg-red-600 text-white rounded-2xl transition-all shadow-2xl border border-white/5"><Trash2 size={18}/></button>
-                          </div>
-                          <div className="absolute bottom-6 left-8"><span className="text-[8px] font-black uppercase px-3 py-1 rounded-lg border backdrop-blur-md bg-blue-600/20 text-blue-400 border-blue-400/30">{c.length}</span></div>
-                       </div>
-                       <div className="p-10 flex-grow flex flex-col">
-                          <h4 className="text-2xl font-black oswald uppercase text-white italic tracking-tighter mb-4 group-hover:text-blue-500 transition-colors">{c.name}</h4>
-                          <div className="flex items-center gap-2 text-zinc-500 text-[10px] font-black uppercase tracking-widest mb-4">
-                             <MapPin size={14} className="text-blue-600" /> {c.location}
-                          </div>
-                          <p className="text-[10px] text-zinc-600 font-bold uppercase line-clamp-2">{c.description}</p>
-                       </div>
-                    </div>
-                  ))}
-               </div>
-            </div>
-          )}
-
-          {/* SECCIÓN AJUSTES */}
-          {activeTab === 'ajustes' && (
-            <div className="space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-500">
-               <div className="bg-zinc-900 border border-zinc-800 p-12 rounded-[3.5rem] shadow-2xl space-y-10 relative overflow-hidden">
-                  <div className="absolute top-0 right-0 p-10 opacity-5 pointer-events-none"><LayoutGrid size={150} /></div>
-                  <div className="flex items-center gap-4 border-b border-zinc-800 pb-6">
-                     <Radio className="text-blue-600" size={28} />
-                     <h3 className="text-2xl font-black oswald uppercase text-white italic tracking-tighter">Enlaces Multimedia</h3>
-                  </div>
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
-                     <div className="space-y-3">
-                        <label className="text-[10px] font-black text-zinc-500 uppercase tracking-[0.3em] ml-2">Streaming Oficial</label>
-                        <div className="relative group"><ImageIcon className="absolute left-5 top-1/2 -translate-y-1/2 text-zinc-700" size={20} /><input type="text" value={streamingUrl} onChange={e => setStreamingUrl(e.target.value)} className="w-full bg-zinc-950 border border-zinc-800 rounded-2xl py-5 pl-14 pr-6 text-white text-xs font-bold outline-none focus:border-blue-600 transition-all shadow-inner" /></div>
-                     </div>
-                     <div className="space-y-3">
-                        <label className="text-[10px] font-black text-zinc-500 uppercase tracking-[0.3em] ml-2">Live Timing</label>
-                        <div className="relative group"><Activity className="absolute left-5 top-1/2 -translate-y-1/2 text-zinc-700" size={20} /><input type="text" value={liveUrl} onChange={e => setLiveUrl(e.target.value)} className="w-full bg-zinc-950 border border-zinc-800 rounded-2xl py-5 pl-14 pr-6 text-white text-xs font-bold outline-none focus:border-blue-600 transition-all shadow-inner" /></div>
-                     </div>
-                  </div>
-                  <button onClick={handleSaveSystemSettings} className="bg-blue-600 text-white px-10 py-5 rounded-2xl font-black uppercase text-[11px] flex items-center gap-3 shadow-2xl shadow-blue-600/20 hover:bg-blue-700 transition-all transform active:scale-95"><Save size={20} /> Guardar Configuración</button>
-               </div>
-
-               <div className="bg-zinc-900 border border-zinc-800 p-12 rounded-[3.5rem] shadow-2xl space-y-10">
-                  <div className="flex items-center gap-4 border-b border-zinc-800 pb-6">
-                     <Users className="text-blue-600" size={28} />
-                     <h3 className="text-2xl font-black oswald uppercase text-white italic tracking-tighter">Categorías Registradas</h3>
-                  </div>
-                  <div className="flex flex-col lg:flex-row gap-6 mb-10">
-                     <div className="flex-grow"><input type="text" value={newCategoryName} onChange={e => setNewCategoryName(e.target.value)} className="w-full bg-zinc-950 border border-zinc-800 rounded-2xl py-5 px-8 text-white text-sm font-bold outline-none focus:border-blue-600 transition-all shadow-inner uppercase" placeholder="NOMBRE DE LA NUEVA CATEGORÍA" /></div>
-                     <button onClick={handleAddCategory} className="bg-white text-black px-10 py-5 rounded-2xl font-black uppercase text-[11px] flex items-center justify-center gap-3 hover:bg-blue-600 hover:text-white transition-all shadow-2xl"><Plus size={20} /> Añadir Categoría</button>
-                  </div>
-                  <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4">
-                     {categories.map(cat => (
-                       <div key={cat} className="bg-zinc-950 border border-zinc-800 p-6 rounded-2xl text-[11px] font-black text-white uppercase flex justify-between items-center group hover:border-blue-600 transition-all shadow-lg">{cat}<button onClick={() => openDeleteConfirmation('cat', cat)} className="text-zinc-800 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all transform hover:scale-110"><Trash2 size={16} /></button></div>
                      ))}
-                  </div>
-               </div>
-            </div>
+                   </div>
+                </div>
+             </div>
           )}
         </div>
       </main>
 
-      {/* --- MODALES --- */}
-
-      {/* MODAL CIRCUITO */}
-      {showCircuitModal && (
-        <div className="fixed inset-0 bg-black/98 backdrop-blur-3xl z-[600] flex items-center justify-center p-6">
-           <div className="bg-zinc-900 w-full max-w-2xl rounded-[4rem] border border-zinc-800 p-12 relative shadow-[0_0_120px_rgba(37,99,235,0.15)] animate-in zoom-in-95 duration-300 max-h-[90vh] overflow-y-auto custom-scrollbar">
-              <button onClick={() => setShowCircuitModal(false)} className="absolute top-10 right-10 text-zinc-500 hover:text-white bg-zinc-950 p-2 rounded-full transition-all"><X size={24}/></button>
-              <div className="flex items-center gap-4 mb-10">
-                 <div className="bg-blue-600 p-4 rounded-3xl shadow-2xl"><MapPin className="text-white" size={32} /></div>
-                 <h3 className="text-4xl font-black oswald text-white uppercase italic tracking-tighter">{editingCircuitId ? 'Editar Circuito' : 'Nuevo Circuito'}</h3>
+      {/* MODAL STAFF KDO */}
+      {showUserModal && (
+        <div className="fixed inset-0 z-[1000] bg-black/95 backdrop-blur-3xl flex items-center justify-center p-6 animate-in fade-in duration-300">
+           <form onSubmit={(e) => { e.preventDefault(); setShowUserModal(false); }} className="glass-panel w-full max-w-md rounded-[3.5rem] p-12 shadow-[0_0_120px_rgba(250,204,21,0.1)] relative border border-white/10">
+              <button type="button" onClick={() => setShowUserModal(false)} className="absolute top-10 right-10 text-zinc-700 hover:text-white transition-all transform hover:rotate-90 duration-300"><XCircle size={36}/></button>
+              <h3 className="text-3xl font-black oswald uppercase text-white italic mb-10 tracking-tighter">Habilitar <span className="text-yellow-400">Operador KDO</span></h3>
+              <div className="space-y-7">
+                 <div className="space-y-2.5">
+                    <label className="text-[9px] font-black uppercase text-zinc-600 tracking-[0.3em] ml-2">Nombre Completo</label>
+                    <input name="name" required placeholder="NOMBRE Y CARGO" className="w-full bg-black/60 border border-zinc-800 rounded-2xl p-5 text-white font-bold uppercase text-xs focus:border-yellow-400 outline-none transition-all shadow-inner" />
+                 </div>
+                 <div className="space-y-2.5">
+                    <label className="text-[9px] font-black uppercase text-zinc-600 tracking-[0.3em] ml-2">Identificador (ID)</label>
+                    <input name="username" required placeholder="ID DE ACCESO ÚNICO" className="w-full bg-black/60 border border-zinc-800 rounded-2xl p-5 text-white font-bold uppercase text-xs focus:border-yellow-400 outline-none transition-all shadow-inner" />
+                 </div>
+                 <div className="space-y-2.5">
+                    <label className="text-[9px] font-black uppercase text-zinc-600 tracking-[0.3em] ml-2">Clave Maestra</label>
+                    <input name="password" required type="password" placeholder="••••••••" className="w-full bg-black/60 border border-zinc-800 rounded-2xl p-5 text-white font-bold text-xs focus:border-yellow-400 outline-none transition-all shadow-inner" />
+                 </div>
+                 <button type="submit" className="w-full bg-yellow-400 text-black py-6 rounded-2xl font-black uppercase text-xs shadow-2xl shadow-yellow-400/25 transform hover:scale-[1.02] active:scale-95 transition-all oswald italic tracking-widest text-lg">Habilitar Staff</button>
               </div>
-              <div className="space-y-6">
-                 <div>
-                    <label className="text-[10px] font-black text-zinc-500 uppercase tracking-[0.3em] mb-3 block ml-2">Nombre del Circuito</label>
-                    <input type="text" value={newCircuit.name} onChange={e => setNewCircuit({...newCircuit, name: e.target.value})} className="w-full bg-zinc-950 border border-zinc-800 rounded-3xl py-5 px-8 text-white text-sm font-bold uppercase outline-none focus:border-blue-600" placeholder="EJ: KARTÓDROMO PKN CHIVILCOY" />
-                 </div>
-                 <div className="grid grid-cols-2 gap-6">
-                    <div>
-                       <label className="text-[10px] font-black text-zinc-500 uppercase tracking-[0.3em] mb-3 block ml-2">Ubicación</label>
-                       <input type="text" value={newCircuit.location} onChange={e => setNewCircuit({...newCircuit, location: e.target.value})} className="w-full bg-zinc-950 border border-zinc-800 rounded-3xl py-5 px-8 text-white text-sm font-bold outline-none focus:border-blue-600" placeholder="EJ: CHIVILCOY, BUENOS AIRES" />
-                    </div>
-                    <div>
-                       <label className="text-[10px] font-black text-zinc-500 uppercase tracking-[0.3em] mb-3 block ml-2">Extensión (metros)</label>
-                       <div className="relative"><Ruler className="absolute left-6 top-1/2 -translate-y-1/2 text-zinc-700" size={18}/><input type="text" value={newCircuit.length} onChange={e => setNewCircuit({...newCircuit, length: e.target.value})} className="w-full bg-zinc-950 border border-zinc-800 rounded-3xl py-5 pl-16 pr-8 text-white text-sm font-bold outline-none focus:border-blue-600" placeholder="EJ: 1.100 MTS" /></div>
-                    </div>
-                 </div>
-                 <div>
-                    <label className="text-[10px] font-black text-zinc-500 uppercase tracking-[0.3em] mb-3 block ml-2">Descripción</label>
-                    <textarea value={newCircuit.description} onChange={e => setNewCircuit({...newCircuit, description: e.target.value})} className="w-full bg-zinc-950 border border-zinc-800 rounded-3xl py-5 px-8 text-white text-sm font-bold outline-none focus:border-blue-600 h-32 resize-none" placeholder="RESEÑA DEL CIRCUITO..." />
-                 </div>
-                 <div>
-                    <label className="text-[10px] font-black text-zinc-500 uppercase tracking-[0.3em] mb-3 block ml-2">Características (Separadas por coma)</label>
-                    <input type="text" value={newCircuit.features} onChange={e => setNewCircuit({...newCircuit, features: e.target.value})} className="w-full bg-zinc-950 border border-zinc-800 rounded-3xl py-5 px-8 text-white text-sm font-bold outline-none focus:border-blue-600" placeholder="EJ: TIERRA COMPACTADA, TRAZADO TÉCNICO, BOXES PKN" />
-                 </div>
-                 <div>
-                    <label className="text-[10px] font-black text-zinc-500 uppercase tracking-[0.3em] mb-3 block ml-2">URL Imagen</label>
-                    <div className="relative"><ImageIcon className="absolute left-6 top-1/2 -translate-y-1/2 text-zinc-700" size={20}/><input type="text" value={newCircuit.image} onChange={e => setNewCircuit({...newCircuit, image: e.target.value})} className="w-full bg-zinc-950 border border-zinc-800 rounded-3xl py-5 pl-16 pr-8 text-white text-sm font-bold outline-none focus:border-blue-600" placeholder="https://..." /></div>
-                 </div>
-                 <button onClick={handleSaveCircuit} className="w-full bg-blue-600 text-white py-7 rounded-[2rem] font-black uppercase oswald tracking-[0.2em] shadow-2xl shadow-blue-600/30 transform active:scale-95 transition-all text-2xl italic mt-6">{editingCircuitId ? 'Actualizar Trazado' : 'Publicar Nuevo Circuito'}</button>
-              </div>
-           </div>
-        </div>
-      )}
-
-      {/* MODAL CONFIRMACIÓN ELIMINACIÓN */}
-      {deleteConfirmation.show && (
-        <div className="fixed inset-0 bg-black/98 backdrop-blur-3xl z-[1000] flex items-center justify-center p-6">
-           <div className="bg-zinc-900 w-full max-w-md rounded-[3.5rem] border border-red-600/30 p-12 text-center shadow-[0_0_150px_rgba(220,38,38,0.15)] animate-in zoom-in-95 duration-200">
-              <div className="bg-red-600/10 w-24 h-24 rounded-full flex items-center justify-center mx-auto mb-8 border border-red-600/20 shadow-2xl"><AlertTriangle className="text-red-600" size={56} /></div>
-              <h3 className="text-3xl font-black oswald uppercase text-white mb-3 italic tracking-tighter">¿CONFIRMAR ACCIÓN?</h3>
-              <p className="text-zinc-500 text-[11px] font-bold uppercase tracking-[0.2em] mb-10 leading-relaxed">ESTÁS A PUNTO DE ELIMINAR "{deleteConfirmation.data?.name || deleteConfirmation.data?.title || deleteConfirmation.data}" DE FORMA <span className="text-red-600 font-black">IRREVERSIBLE</span>.</p>
-              <div className="grid grid-cols-2 gap-4">
-                 <button onClick={() => setDeleteConfirmation({ show: false, type: 'pilot', data: null })} className="bg-zinc-800 text-zinc-400 py-5 rounded-2xl font-black uppercase text-[10px] tracking-widest hover:text-white transition-all">Cancelar</button>
-                 <button onClick={confirmDeletion} className="bg-red-600 text-white py-5 rounded-2xl font-black uppercase text-[10px] tracking-widest shadow-2xl shadow-red-600/20 hover:bg-red-700 transition-all transform active:scale-95">Eliminar Ahora</button>
-              </div>
-           </div>
-        </div>
-      )}
-
-      {/* MODAL NUEVO REGLAMENTO */}
-      {showRegModal && (
-        <div className="fixed inset-0 bg-black/98 backdrop-blur-3xl z-[600] flex items-center justify-center p-6">
-          <div className="bg-zinc-900 w-full max-w-xl rounded-[4rem] border border-zinc-800 p-12 relative shadow-[0_0_120px_rgba(37,99,235,0.15)] animate-in zoom-in-95 duration-300">
-            <button onClick={() => setShowRegModal(false)} className="absolute top-10 right-10 text-zinc-500 hover:text-white bg-zinc-950 p-2 rounded-full transition-all"><X size={24}/></button>
-            <div className="flex items-center gap-4 mb-10"><div className="bg-blue-600 p-4 rounded-3xl shadow-2xl"><FilePlus className="text-white" size={32} /></div><h3 className="text-4xl font-black oswald text-white uppercase italic tracking-tighter leading-none">Nueva Norma PKN</h3></div>
-            <div className="space-y-6">
-               <div><label className="text-[10px] font-black text-zinc-500 uppercase tracking-[0.3em] mb-3 block ml-2">Título Oficial</label><input type="text" placeholder="EJ: REGLAMENTO TÉCNICO" value={newReg.title} onChange={e => setNewReg({...newReg, title: e.target.value})} className="w-full bg-zinc-950 border border-zinc-800 rounded-3xl py-5 px-8 text-white text-sm font-bold uppercase outline-none focus:border-blue-600 transition-all" /></div>
-               <div><label className="text-[10px] font-black text-zinc-500 uppercase tracking-[0.3em] mb-3 block ml-2">Categoría</label><select value={newReg.category} onChange={e => setNewReg({...newReg, category: e.target.value as RegulationCategory})} className="w-full bg-zinc-950 border border-zinc-800 rounded-3xl py-5 px-8 text-white text-sm font-bold uppercase outline-none focus:border-blue-600 transition-all cursor-pointer"><option value="Técnico">Técnico</option><option value="Deportivo">Deportivo</option><option value="Anexo">Anexo</option><option value="Calendario">Calendario</option><option value="Institucional">Institucional</option></select></div>
-               <label className="block border-4 border-dashed border-zinc-800 rounded-[2.5rem] p-12 text-center cursor-pointer hover:border-blue-600 hover:bg-blue-600/5 transition-all group mt-6"><Upload size={48} className="mx-auto mb-6 text-zinc-800 group-hover:text-blue-600 transition-colors" /><p className="text-[11px] font-black uppercase text-zinc-500 mb-2 group-hover:text-white transition-colors">{newReg.fileName || 'CARGAR ARCHIVO PDF OFICIAL'}</p><input type="file" className="hidden" onChange={handleFileUpload} accept=".pdf" /></label>
-               <button onClick={handleSaveRegulation} className="w-full bg-blue-600 text-white py-7 rounded-[2rem] font-black uppercase oswald tracking-[0.2em] shadow-2xl shadow-blue-600/30 transform active:scale-95 transition-all text-2xl italic mt-6">Publicar Normativa</button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* MODAL NUEVO CAMPEONATO */}
-      {showChampModal && (
-        <div className="fixed inset-0 bg-black/98 backdrop-blur-3xl z-[600] flex items-center justify-center p-6">
-           <div className="bg-zinc-900 w-full max-w-xl rounded-[4rem] border border-zinc-800 p-12 relative shadow-[0_0_120px_rgba(37,99,235,0.15)] animate-in zoom-in-95 duration-300">
-              <button onClick={() => setShowChampModal(false)} className="absolute top-10 right-10 text-zinc-500 hover:text-white bg-zinc-950 p-2 rounded-full transition-all"><X size={24}/></button>
-              <div className="flex items-center gap-4 mb-10"><div className="bg-blue-600 p-4 rounded-3xl shadow-2xl"><Trophy className="text-white" size={32} /></div><h3 className="text-4xl font-black oswald text-white uppercase italic tracking-tighter">Nuevo Campeonato</h3></div>
-              <div className="space-y-6">
-                 <div><label className="text-[10px] font-black text-zinc-500 uppercase tracking-[0.3em] mb-3 block ml-2">Nombre del Torneo</label><input type="text" value={newChamp.name} onChange={e => setNewChamp({...newChamp, name: e.target.value})} className="w-full bg-zinc-950 border border-zinc-800 rounded-3xl py-5 px-8 text-white text-sm font-bold uppercase outline-none focus:border-blue-600" /></div>
-                 <div className="grid grid-cols-2 gap-6">
-                    <div><label className="text-[10px] font-black text-zinc-500 uppercase tracking-[0.3em] mb-3 block ml-2">Fechas</label><input type="text" value={newChamp.dates} onChange={e => setNewChamp({...newChamp, dates: e.target.value})} className="w-full bg-zinc-950 border border-zinc-800 rounded-3xl py-5 px-8 text-white text-sm font-bold outline-none" /></div>
-                    <div><label className="text-[10px] font-black text-zinc-500 uppercase tracking-[0.3em] mb-3 block ml-2">Estado</label><select value={newChamp.status} onChange={e => setNewChamp({...newChamp, status: e.target.value})} className="w-full bg-zinc-950 border border-zinc-800 rounded-3xl py-5 px-8 text-white text-sm font-bold uppercase"><option value="En curso">En curso</option><option value="Finalizado">Finalizado</option><option value="Próximamente">Próximamente</option></select></div>
-                 </div>
-                 <div><label className="text-[10px] font-black text-zinc-500 uppercase tracking-[0.3em] mb-3 block ml-2">Circuitos</label><input type="text" value={newChamp.tracks} onChange={e => setNewChamp({...newChamp, tracks: e.target.value})} className="w-full bg-zinc-950 border border-zinc-800 rounded-3xl py-5 px-8 text-white text-sm font-bold outline-none" /></div>
-                 <button onClick={handleSaveChamp} className="w-full bg-blue-600 text-white py-7 rounded-[2rem] font-black uppercase oswald tracking-[0.2em] shadow-2xl shadow-blue-600/30 text-2xl italic mt-6">Publicar Campeonato</button>
-              </div>
-           </div>
+           </form>
         </div>
       )}
     </div>

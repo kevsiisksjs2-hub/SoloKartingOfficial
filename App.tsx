@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { HashRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
+import { HashRouter as Router, Routes, Route, useLocation, Navigate } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import Home from './pages/Home';
@@ -8,38 +8,52 @@ import Circuitos from './pages/Circuitos';
 import Campeonatos from './pages/Campeonatos';
 import Pilotos from './pages/Pilotos';
 import Inscripciones from './pages/Inscripciones';
-import Noticias from './pages/Noticias';
 import Resultados from './pages/Resultados';
 import Reglamentos from './pages/Reglamentos';
+import HallOfFame from './pages/HallOfFame';
 import AdminLogin from './pages/AdminLogin';
 import AdminDashboard from './pages/AdminDashboard';
 import AdminNewPilot from './pages/AdminNewPilot';
+import LiveCenter from './pages/LiveCenter';
 import AIChatBot from './components/AIChatBot';
 
 const AppContent: React.FC = () => {
   const location = useLocation();
-  const isAdminRoute = location.pathname.startsWith('/AdminKDO');
+  const path = location.pathname.toLowerCase();
+  
+  // Determinamos si estamos en una ruta administrativa o en vivo para ajustar la UI
+  const isAdminRoute = path.includes('/adminkdo');
+  const isLiveRoute = path.includes('/live');
 
   return (
-    <div className="min-h-screen flex flex-col bg-zinc-950">
-      {!isAdminRoute && <Navbar />}
+    <div className="min-h-screen flex flex-col bg-transparent">
+      {/* El Navbar y Footer solo se muestran en la navegación pública */}
+      {(!isAdminRoute && !isLiveRoute) && <Navbar />}
+      
       <main className="flex-grow">
         <Routes>
+          {/* RUTAS PÚBLICAS (EL PORTAL SIEMPRE ES LO PRIMERO) */}
           <Route path="/" element={<Home />} />
           <Route path="/circuitos" element={<Circuitos />} />
           <Route path="/campeonatos" element={<Campeonatos />} />
           <Route path="/pilotos" element={<Pilotos />} />
           <Route path="/inscripciones" element={<Inscripciones />} />
-          <Route path="/noticias" element={<Noticias />} />
           <Route path="/resultados" element={<Resultados />} />
           <Route path="/reglamentos" element={<Reglamentos />} />
+          <Route path="/historia" element={<HallOfFame />} />
+          <Route path="/live" element={<LiveCenter />} />
           
+          {/* RUTA DE ACCESO AL PANEL (SOLO ACCESIBLE VÍA URL O BOTÓN ESPECÍFICO) */}
           <Route path="/AdminKDO" element={<AdminLogin />} />
           <Route path="/AdminKDO/dashboard" element={<AdminDashboard />} />
           <Route path="/AdminKDO/nuevo-piloto" element={<AdminNewPilot />} />
+
+          {/* Redirección de seguridad al portal público */}
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </main>
-      {!isAdminRoute && (
+
+      {(!isAdminRoute && !isLiveRoute) && (
         <>
           <Footer />
           <AIChatBot />

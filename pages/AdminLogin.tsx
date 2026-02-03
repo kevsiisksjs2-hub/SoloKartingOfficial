@@ -1,8 +1,8 @@
 
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
 import { storageService } from '../services/storageService';
-import { Lock, User as UserIcon, ShieldCheck } from 'lucide-react';
+import { Lock, User as UserIcon, ShieldCheck, ChevronLeft, ArrowRight, Zap } from 'lucide-react';
 
 const AdminLogin: React.FC = () => {
   const [username, setUsername] = useState('');
@@ -10,89 +10,116 @@ const AdminLogin: React.FC = () => {
   const [error, setError] = useState('');
   const navigate = useNavigate();
 
+  useEffect(() => {
+    // Si ya existe sesión válida, saltamos directo al panel de gestión
+    if (storageService.getAuth()) {
+      navigate('/AdminKDO/dashboard');
+    }
+  }, [navigate]);
+
+  const LOGO_URL = "https://api.mundopiloto.com.ar/archivos/2/IMAGENES/ASOCIACIONES/logo_asociacion_2025-06-11T201534737Z.jpg";
+
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    
-    const validUsers = [
-      { user: 'pknadmin', pass: 'pkn2026', role: 'admin' }
-    ];
-
-    const match = validUsers.find(u => u.user === username && u.pass === password);
+    const admins = storageService.getAdminUsers();
+    const match = admins.find(u => u.username === username.toLowerCase() && u.password === password);
 
     if (match) {
-      storageService.setAuth({ 
-        id: Math.random().toString(36).substr(2, 9), 
-        username: match.user, 
-        role: 'admin' 
-      });
+      storageService.setAuth({ id: match.id, username: match.username, role: match.role, name: match.name });
+      storageService.addLog('LOGIN', `Acceso autorizado: ${match.username}`);
       navigate('/AdminKDO/dashboard');
     } else {
-      setError('Credenciales incorrectas. Verifique acceso PKN.');
+      setError('Credenciales inválidas. Verifique sus permisos KDO.');
+      storageService.addLog('AUTH_ERROR', `Fallo de autenticación: ${username}`);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-black px-4">
-      <div className="max-w-md w-full">
-        <div className="text-center mb-10">
-          <div className="bg-blue-600 inline-block px-4 py-2 rounded-xl italic font-black text-white text-3xl oswald tracking-tighter mb-4 shadow-[0_0_30px_rgba(37,99,235,0.3)]">
-            ADMIN <span className="text-black bg-white px-1.5 rounded-sm">PKN</span>
+    <div className="min-h-screen flex flex-col items-center justify-center bg-black px-4 relative overflow-hidden">
+      {/* Decoración ambiental */}
+      <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-yellow-400/5 blur-[120px] rounded-full -translate-y-1/2 translate-x-1/2 pointer-events-none"></div>
+      
+      {/* Botón de Retorno al Portal Público */}
+      <Link 
+        to="/" 
+        className="absolute top-10 left-10 text-zinc-500 hover:text-yellow-400 flex items-center gap-3 font-black uppercase text-[10px] tracking-widest transition-all group z-20"
+      >
+        <div className="bg-zinc-900 p-2 rounded-xl group-hover:bg-yellow-400 group-hover:text-black transition-all">
+          <ChevronLeft size={18} />
+        </div>
+        Portal Público KDO
+      </Link>
+
+      <div className="max-w-md w-full animate-in fade-in zoom-in-95 duration-700 relative z-10">
+        <div className="text-center mb-10 flex flex-col items-center">
+          <div className="relative mb-8 group">
+            <div className="absolute inset-0 bg-yellow-400/20 blur-3xl rounded-full scale-110 group-hover:scale-125 transition-transform duration-500"></div>
+            <img 
+              src={LOGO_URL} 
+              alt="KDO" 
+              className="w-28 h-28 rounded-full border-2 border-yellow-400 shadow-2xl relative z-10 bg-white object-contain p-2"
+            />
           </div>
-          <h2 className="text-2xl font-black text-white uppercase tracking-tight oswald leading-none">Pilotos Karting del Norte</h2>
-          <p className="text-zinc-600 mt-3 text-[9px] font-black uppercase tracking-[0.4em] italic">Sistema de Gestión Centralizado</p>
+          <div className="bg-yellow-400 inline-block px-6 py-2 rounded-2xl italic font-black text-black text-3xl oswald tracking-tighter mb-4 shadow-[0_15px_45px_rgba(250,204,21,0.25)]">
+            ACCESO <span className="text-white bg-black px-2 rounded-md ml-1">STAFF</span>
+          </div>
+          <h2 className="text-xs font-black text-white uppercase tracking-[0.4em] oswald italic opacity-40">Área de Gestión KDO</h2>
         </div>
 
-        <div className="bg-zinc-900 border border-zinc-800 p-10 rounded-[2.5rem] shadow-2xl relative overflow-hidden">
-          <div className="absolute top-0 left-0 w-full h-1.5 bg-blue-600"></div>
+        <div className="glass-panel p-10 rounded-[3rem] relative overflow-hidden border-t border-white/10">
+          <div className="absolute top-0 left-0 w-full h-0.5 bg-gradient-to-r from-transparent via-yellow-400/50 to-transparent"></div>
           
           <form onSubmit={handleLogin} className="space-y-8">
-            <div>
-              <label className="block text-zinc-500 text-[10px] font-black uppercase tracking-widest mb-3 ml-1">Identificador de Usuario</label>
+            <div className="space-y-2">
+              <label className="block text-zinc-500 text-[9px] font-black uppercase tracking-[0.3em] ml-2">Usuario Federado</label>
               <div className="relative group">
-                <UserIcon className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-600 group-focus-within:text-blue-600 transition-colors" size={18} />
+                <UserIcon className="absolute left-5 top-1/2 -translate-y-1/2 text-zinc-700 group-focus-within:text-yellow-400 transition-colors" size={18} />
                 <input
-                  type="text"
+                  type="text" autoFocus
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
-                  className="w-full bg-zinc-950 border border-zinc-800 rounded-2xl py-4 pl-12 pr-4 text-white font-bold focus:outline-none focus:border-blue-600 transition-all uppercase placeholder:text-zinc-800 text-sm"
-                  placeholder="USUARIO PKN"
+                  className="w-full bg-black/60 border border-zinc-800 rounded-2xl py-5 pl-14 pr-6 text-white font-bold focus:outline-none focus:border-yellow-400 transition-all uppercase text-xs tracking-widest placeholder:text-zinc-800"
+                  placeholder="ID USUARIO"
                 />
               </div>
             </div>
 
-            <div>
-              <label className="block text-zinc-500 text-[10px] font-black uppercase tracking-widest mb-3 ml-1">Clave PKN System</label>
+            <div className="space-y-2">
+              <label className="block text-zinc-500 text-[9px] font-black uppercase tracking-[0.3em] ml-2">Clave de Seguridad</label>
               <div className="relative group">
-                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-600 group-focus-within:text-blue-600 transition-colors" size={18} />
+                <Lock className="absolute left-5 top-1/2 -translate-y-1/2 text-zinc-700 group-focus-within:text-yellow-400 transition-colors" size={18} />
                 <input
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full bg-zinc-950 border border-zinc-800 rounded-2xl py-4 pl-12 pr-4 text-white focus:outline-none focus:border-blue-600 transition-all placeholder:text-zinc-800 text-sm"
+                  className="w-full bg-black/60 border border-zinc-800 rounded-2xl py-5 pl-14 pr-6 text-white font-bold focus:outline-none focus:border-yellow-400 transition-all text-xs tracking-widest placeholder:text-zinc-800"
                   placeholder="••••••••"
                 />
               </div>
             </div>
 
             {error && (
-              <div className="bg-red-600/10 border border-red-600/20 p-4 rounded-xl flex items-center gap-3 animate-pulse">
+              <div className="bg-red-500/10 border border-red-500/20 p-4 rounded-2xl flex items-center gap-3 animate-in fade-in duration-300">
                 <ShieldCheck className="text-red-500 shrink-0" size={18} />
-                <p className="text-red-500 text-[10px] font-black uppercase leading-tight">{error}</p>
+                <p className="text-red-500 text-[10px] font-black uppercase leading-tight italic">{error}</p>
               </div>
             )}
 
             <button
               type="submit"
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-black uppercase py-6 rounded-2xl transition-all transform active:scale-95 shadow-xl shadow-blue-600/20 oswald tracking-wider text-xl italic"
+              className="w-full bg-yellow-400 hover:bg-white text-black font-black uppercase py-6 rounded-2xl transition-all transform active:scale-95 shadow-2xl oswald tracking-widest text-2xl italic flex items-center justify-center gap-4 group"
             >
-              Iniciar Gestión PKN
+              Iniciar Gestión
+              <Zap size={22} className="group-hover:animate-pulse transition-transform" />
             </button>
           </form>
         </div>
         
-        <p className="text-center text-zinc-800 text-[8px] font-black uppercase tracking-[0.5em] mt-8">
-          PILOTOS KARTING DEL NORTE • ACCESO ADMINISTRATIVO
-        </p>
+        <div className="mt-12 flex items-center justify-center gap-6">
+           <div className="h-px bg-zinc-900 flex-grow"></div>
+           <p className="text-zinc-800 text-[8px] font-black uppercase tracking-[0.5em] whitespace-nowrap">KDO SECURITY SYSTEM</p>
+           <div className="h-px bg-zinc-900 flex-grow"></div>
+        </div>
       </div>
     </div>
   );

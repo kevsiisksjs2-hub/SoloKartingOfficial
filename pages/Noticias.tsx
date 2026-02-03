@@ -12,7 +12,7 @@ const newsItems = [
   },
   {
     title: "Nuevos Reglamentos Técnicos para el 2025",
-    excerpt: "La FRAD 3 anunció cambios significativos para la categoría 150cc KDO Power.",
+    excerpt: "La FRAD 3 anunció cambios significativos para la categoría KDO Power.",
     date: "20 Nov 2024",
     author: "Admin Solo Karting",
     image: "https://images.unsplash.com/photo-1558981285-6f0c94958bb6?w=800&auto=format"

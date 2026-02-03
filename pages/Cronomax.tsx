@@ -168,8 +168,8 @@ const Cronomax: React.FC = () => {
                         <tr key={p.id} className="hover:bg-white/5 transition-colors">
                           <td className="px-10 py-5 font-black oswald text-red-500">#{p.number}</td>
                           <td className="px-10 py-5 text-xs font-bold uppercase">{p.name}</td>
-                          <td className="px-10 py-5 text-[10px] font-mono text-zinc-500">SK-24-{p.number}-M</td>
-                          <td className="px-10 py-5 text-[10px] font-mono text-zinc-500">SK-24-{p.number}-C</td>
+                          <td className="px-10 py-5 text-[10px] font-mono text-zinc-500">KDO-26-{p.number}-M</td>
+                          <td className="px-10 py-5 text-[10px] font-mono text-zinc-500">KDO-26-{p.number}-C</td>
                           <td className="px-10 py-5 text-right">
                              <div className="inline-block px-3 py-1 bg-emerald-500/10 border border-emerald-500/20 rounded-full text-emerald-500 text-[8px] font-black uppercase">Aprobado</div>
                           </td>

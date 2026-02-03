@@ -104,56 +104,55 @@ const Mercado: React.FC = () => {
             </div>
           )}
         </div>
-      </div>
 
-      {showModal && (
-        <div className="fixed inset-0 z-[150] flex items-center justify-center p-6 bg-black/98 backdrop-blur-2xl">
-           <div className="bg-zinc-900 w-full max-w-xl rounded-[3.5rem] border border-zinc-800 p-12 shadow-2xl relative animate-in zoom-in-95 duration-300">
-              <button onClick={() => setShowModal(false)} className="absolute top-10 right-10 text-zinc-500 hover:text-white bg-zinc-950 p-2 rounded-full transition-all"><X size={24} /></button>
-              
-              <div className="flex items-center gap-4 mb-10">
-                <div className="bg-red-600 p-3 rounded-2xl shadow-xl"><Zap className="text-white" size={24} /></div>
-                <h2 className="text-3xl font-black oswald uppercase text-white italic tracking-tighter">Nuevo Anuncio Oficial</h2>
-              </div>
+        {showModal && (
+          <div className="fixed inset-0 z-[150] flex items-center justify-center p-6 bg-black/98 backdrop-blur-2xl">
+             <div className="bg-zinc-900 w-full max-w-xl rounded-[3.5rem] border border-zinc-800 p-12 shadow-2xl relative animate-in zoom-in-95 duration-300">
+                <button onClick={() => setShowModal(false)} className="absolute top-10 right-10 text-zinc-500 hover:text-white bg-zinc-950 p-2 rounded-full transition-all"><X size={24} /></button>
+                
+                <div className="flex items-center gap-4 mb-10">
+                  <div className="bg-red-600 p-3 rounded-2xl shadow-xl"><Zap className="text-white" size={24} /></div>
+                  <h2 className="text-3xl font-black oswald uppercase text-white italic tracking-tighter">Nuevo Anuncio Oficial</h2>
+                </div>
 
-              <form onSubmit={handleSubmit} className="space-y-6">
-                 <div className="p-14 border-2 border-dashed border-zinc-800 rounded-[2.5rem] text-center flex flex-col items-center gap-4 hover:border-red-600/50 transition-all cursor-pointer bg-zinc-950/50 group">
-                    <ImageIcon size={48} className="text-zinc-800 group-hover:text-red-600 transition-colors" />
-                    <p className="text-[10px] font-black uppercase text-zinc-600 tracking-widest group-hover:text-white">Subir Imagen del Producto</p>
-                 </div>
-                 
-                 <div className="space-y-4">
-                    <div>
-                       <label className="text-[9px] font-black text-zinc-600 uppercase tracking-widest mb-2 block ml-2">Título del Anuncio</label>
-                       <input required type="text" value={newItem.title} onChange={e => setNewItem({...newItem, title: e.target.value})} placeholder="EJ: MOTOR 150CC KDO POWER" className="w-full bg-zinc-950 border border-zinc-800 rounded-2xl px-6 py-4 text-white font-bold uppercase outline-none focus:border-red-600 text-xs transition-all" />
-                    </div>
-                    
-                    <div className="grid grid-cols-2 gap-4">
-                       <div>
-                          <label className="text-[9px] font-black text-zinc-600 uppercase tracking-widest mb-2 block ml-2">Precio / Moneda</label>
-                          <input required type="text" value={newItem.price} onChange={e => setNewItem({...newItem, price: e.target.value})} placeholder="$0.00" className="w-full bg-zinc-950 border border-zinc-800 rounded-2xl px-6 py-4 text-white font-bold outline-none focus:border-red-600 text-xs" />
-                       </div>
-                       <div>
-                          <label className="text-[9px] font-black text-zinc-600 uppercase tracking-widest mb-2 block ml-2">Categoría</label>
-                          <select value={newItem.category} onChange={e => setNewItem({...newItem, category: e.target.value as MarketplaceItem['category']})} className="w-full bg-zinc-950 border border-zinc-800 rounded-2xl px-4 py-4 text-white font-black uppercase text-[10px] outline-none focus:border-red-600 cursor-pointer">
-                             {['Kart Completo', 'Motor', 'Repuestos', 'Indumentaria'].map(c => <option key={c}>{c}</option>)}
-                          </select>
-                       </div>
-                    </div>
-                    
-                    <div>
-                       <label className="text-[9px] font-black text-zinc-600 uppercase tracking-widest mb-2 block ml-2">WhatsApp de Contacto</label>
-                       <input required type="text" value={newItem.contact} onChange={e => setNewItem({...newItem, contact: e.target.value})} placeholder="+54 9 11 ..." className="w-full bg-zinc-950 border border-zinc-800 rounded-2xl px-6 py-4 text-white font-bold outline-none focus:border-red-600 text-xs" />
-                    </div>
-                 </div>
-                 
-                 <button type="submit" className="w-full bg-red-600 hover:bg-red-700 text-white font-black uppercase py-6 rounded-3xl shadow-2xl shadow-red-600/30 transition-all transform hover:scale-[1.02] active:scale-95 text-xs tracking-[0.2em] oswald italic">
-                    Publicar Ahora en Mercado
-                 </button>
-              </form>
-           </div>
-        </div>
-      )}
+                <form onSubmit={handleSubmit} className="space-y-6">
+                   <div className="p-14 border-2 border-dashed border-zinc-800 rounded-[2.5rem] text-center flex flex-col items-center gap-4 hover:border-red-600/50 transition-all cursor-pointer bg-zinc-950/50 group">
+                      <ImageIcon size={48} className="text-zinc-800 group-hover:text-red-600 transition-colors" />
+                      <p className="text-[10px] font-black uppercase text-zinc-600 tracking-widest group-hover:text-white">Subir Imagen del Producto</p>
+                   </div>
+                   
+                   <div className="space-y-4">
+                      <div>
+                         <label className="text-[9px] font-black text-zinc-600 uppercase tracking-widest mb-2 block ml-2">Título del Anuncio</label>
+                         <input required type="text" value={newItem.title} onChange={e => setNewItem({...newItem, title: e.target.value})} placeholder="EJ: MOTOR 150CC KDO POWER" className="w-full bg-zinc-950 border border-zinc-800 rounded-2xl px-6 py-4 text-white font-bold uppercase outline-none focus:border-red-600 text-xs transition-all" />
+                      </div>
+                      
+                      <div className="grid grid-cols-2 gap-4">
+                         <div>
+                            <label className="text-[9px] font-black text-zinc-600 uppercase tracking-widest mb-2 block ml-2">Precio / Moneda</label>
+                            <input required type="text" value={newItem.price} onChange={e => setNewItem({...newItem, price: e.target.value})} placeholder="$0.00" className="w-full bg-zinc-950 border border-zinc-800 rounded-2xl px-6 py-4 text-white font-bold outline-none focus:border-red-600 text-xs" />
+                         </div>
+                         <div>
+                            <label className="text-[9px] font-black text-zinc-600 uppercase tracking-widest mb-2 block ml-2">Categoría</label>
+                            <select value={newItem.category} onChange={e => setNewItem({...newItem, category: e.target.value as MarketplaceItem['category']})} className="w-full bg-zinc-950 border border-zinc-800 rounded-2xl px-4 py-4 text-white font-black uppercase text-[10px] outline-none focus:border-red-600 cursor-pointer">
+                               {['Kart Completo', 'Motor', 'Repuestos', 'Indumentaria'].map(c => <option key={c}>{c}</option>)}
+                            </select>
+                         </div>
+                      </div>
+                      
+                      <div>
+                         <label className="text-[9px] font-black text-zinc-600 uppercase tracking-widest mb-2 block ml-2">WhatsApp de Contacto</label>
+                         <input required type="text" value={newItem.contact} onChange={e => setNewItem({...newItem, contact: e.target.value})} placeholder="+54 9 11 ..." className="w-full bg-zinc-950 border border-zinc-800 rounded-2xl px-6 py-4 text-white font-bold outline-none focus:border-red-600 text-xs" />
+                      </div>
+                   </div>
+                   
+                   <button type="submit" className="w-full bg-red-600 hover:bg-red-700 text-white font-black uppercase py-6 rounded-3xl shadow-2xl shadow-red-600/30 transition-all transform hover:scale-[1.02] active:scale-95 text-xs tracking-[0.2em] oswald italic">
+                      Publicar Ahora en Mercado
+                   </button>
+                </form>
+             </div>
+          </div>
+        )}
     </div>
   );
 };

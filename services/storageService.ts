@@ -1,83 +1,109 @@
 
-import { Pilot, Category, Championship, Regulation, Circuit, Association, MarketplaceItem, TrackFlag } from '../types';
-import { INITIAL_PILOTS, INITIAL_CATEGORIES, INITIAL_CHAMPIONSHIPS, INITIAL_CIRCUITS, INITIAL_ASSOCIATIONS } from '../constants';
+import { Pilot, Category, TechCheck, Penalty, AuditLog, SystemSettings, TrackFlag, Protest, Championship, Circuit, Association, RaceResult, MarketplaceItem, Regulation, AdminUser } from '../types';
+import { INITIAL_PILOTS, INITIAL_CATEGORIES, INITIAL_CIRCUITS, INITIAL_CHAMPIONSHIPS, INITIAL_ASSOCIATIONS } from '../constants';
 
 const KEYS = {
-  PILOTS: 'pkn_pilots',
-  CHAMPS: 'pkn_champs',
-  CATS: 'pkn_categories',
-  REGS: 'pkn_regulations',
-  LIVE_URL: 'pkn_live_url',
-  STREAM_URL: 'pkn_stream_url',
-  AUTH: 'pkn_auth',
-  CIRCUITS: 'pkn_circuits',
-  ASSOCS: 'pkn_assocs',
-  MARKET: 'pkn_market',
-  TRACK_STATUS: 'pkn_track_status'
+  PILOTS: 'kdo_p_v3',
+  TECH: 'kdo_tech_v3',
+  PENALTIES: 'kdo_penalties_v3',
+  PROTESTS: 'kdo_protests_v3',
+  SETTINGS: 'kdo_settings_v3',
+  LOGS: 'kdo_logs_v3',
+  TRACK_STATUS: 'kdo_flag_v3',
+  AUTH: 'kdo_auth_v3',
+  ADMIN_USERS: 'kdo_users_v3',
+  MARKETPLACE: 'kdo_market_v3',
+  REGULATIONS: 'kdo_regs_v3',
+  RESULTS: 'kdo_results_v3',
+  CHAMPIONSHIPS: 'kdo_champs_v3'
 };
 
+const INITIAL_ADMINS: AdminUser[] = [
+  { id: 'admin1', username: 'kdoadmin', password: 'kdo2026', role: 'SuperAdmin', name: 'Director KDO' }
+];
+
+const DEFAULT_SETTINGS: SystemSettings = {
+  paddockTicker: '⚠️ TODOS LOS PILOTOS A BRIEFING EN TORRE DE CONTROL • CLASE MASTER A PARQUE CERRADO ⚠️',
+  maintenanceMode: false,
+  registrationsOpen: true,
+  briefingUrl: '#',
+  raceDirectorMode: false,
+  weatherInfo: 'Soleado - 24°C',
+  minWeightPerCategory: {
+    'KDO Power': 165,
+    'Supermaster': 175,
+    'Máster': 170,
+    'Clase 3': 160
+  },
+  liveTimingUrl: 'https://speedhive.mylaps.com/LiveTiming',
+  resultsExternalUrl: '#'
+};
+
+export interface ExtendedSystemSettings extends SystemSettings {
+  orbitsIp?: string;
+  useLocalOrbits?: boolean;
+}
+
 export const storageService = {
-  getPilots: (): Pilot[] => {
-    const data = localStorage.getItem(KEYS.PILOTS);
-    return data ? JSON.parse(data) : INITIAL_PILOTS;
-  },
+  getPilots: (): Pilot[] => JSON.parse(localStorage.getItem(KEYS.PILOTS) || JSON.stringify(INITIAL_PILOTS)),
   savePilots: (p: Pilot[]) => localStorage.setItem(KEYS.PILOTS, JSON.stringify(p)),
+
+  getTechChecks: (): TechCheck[] => JSON.parse(localStorage.getItem(KEYS.TECH) || '[]'),
+  saveTechCheck: (c: TechCheck) => {
+    const all = storageService.getTechChecks();
+    localStorage.setItem(KEYS.TECH, JSON.stringify([c, ...all]));
+  },
+
+  getPenalties: (): Penalty[] => JSON.parse(localStorage.getItem(KEYS.PENALTIES) || '[]'),
+  savePenalty: (p: Penalty) => {
+    const all = storageService.getPenalties();
+    localStorage.setItem(KEYS.PENALTIES, JSON.stringify([p, ...all]));
+  },
+
+  getProtests: (): Protest[] => JSON.parse(localStorage.getItem(KEYS.PROTESTS) || '[]'),
+  saveProtest: (p: Protest) => {
+    const all = storageService.getProtests();
+    localStorage.setItem(KEYS.PROTESTS, JSON.stringify([p, ...all]));
+  },
+
+  getSettings: (): ExtendedSystemSettings => JSON.parse(localStorage.getItem(KEYS.SETTINGS) || JSON.stringify(DEFAULT_SETTINGS)),
+  saveSettings: (s: ExtendedSystemSettings) => localStorage.setItem(KEYS.SETTINGS, JSON.stringify(s)),
+
+  getAuditLogs: (): AuditLog[] => JSON.parse(localStorage.getItem(KEYS.LOGS) || '[]'),
+  addLog: (action: string, details: string) => {
+    const logs = storageService.getAuditLogs();
+    const admin = storageService.getAuth()?.username || 'System';
+    const newLog = { id: Date.now().toString(), timestamp: Date.now(), admin, action, details };
+    localStorage.setItem(KEYS.LOGS, JSON.stringify([newLog, ...logs].slice(0, 100)));
+  },
+
+  getTrackStatus: (): TrackFlag => (localStorage.getItem(KEYS.TRACK_STATUS) as TrackFlag) || TrackFlag.VERDE,
+  saveTrackStatus: (f: TrackFlag) => localStorage.setItem(KEYS.TRACK_STATUS, f),
+
+  getAuth: (): AdminUser | null => JSON.parse(localStorage.getItem(KEYS.AUTH) || 'null'),
+  setAuth: (u: AdminUser | null) => u ? localStorage.setItem(KEYS.AUTH, JSON.stringify(u)) : localStorage.removeItem(KEYS.AUTH),
+
+  getAdminUsers: (): AdminUser[] => JSON.parse(localStorage.getItem(KEYS.ADMIN_USERS) || JSON.stringify(INITIAL_ADMINS)),
+  saveAdminUsers: (u: AdminUser[]) => localStorage.setItem(KEYS.ADMIN_USERS, JSON.stringify(u)),
+
+  getCategories: (): string[] => INITIAL_CATEGORIES,
+  getCircuits: (): Circuit[] => INITIAL_CIRCUITS,
   
-  getCategories: (): Category[] => {
-    const data = localStorage.getItem(KEYS.CATS);
-    return data ? JSON.parse(data) : INITIAL_CATEGORIES;
-  },
-  saveCategories: (c: Category[]) => localStorage.setItem(KEYS.CATS, JSON.stringify(c)),
+  getChampionships: (): Championship[] => JSON.parse(localStorage.getItem(KEYS.CHAMPIONSHIPS) || JSON.stringify(INITIAL_CHAMPIONSHIPS)),
+  saveChampionships: (c: Championship[]) => localStorage.setItem(KEYS.CHAMPIONSHIPS, JSON.stringify(c)),
 
-  getRegulations: (): Regulation[] => {
-    const data = localStorage.getItem(KEYS.REGS);
-    return data ? JSON.parse(data) : [];
-  },
-  saveRegulations: (r: Regulation[]) => localStorage.setItem(KEYS.REGS, JSON.stringify(r)),
-
-  getAuth: () => {
-    const data = localStorage.getItem(KEYS.AUTH);
-    return data ? JSON.parse(data) : null;
-  },
-  setAuth: (u: any) => u ? localStorage.setItem(KEYS.AUTH, JSON.stringify(u)) : localStorage.removeItem(KEYS.AUTH),
+  getStreamingUrl: () => '#',
+  getLiveUrl: () => storageService.getSettings().liveTimingUrl,
   
-  getLiveUrl: () => localStorage.getItem(KEYS.LIVE_URL) || 'https://speedhive.mylaps.com/LiveTiming',
-  saveLiveUrl: (u: string) => localStorage.setItem(KEYS.LIVE_URL, u),
+  getRaceResults: (): RaceResult[] => JSON.parse(localStorage.getItem(KEYS.RESULTS) || '[]'),
+  saveRaceResults: (r: RaceResult[]) => localStorage.setItem(KEYS.RESULTS, JSON.stringify(r)),
+  
+  getRegulations: (): Regulation[] => JSON.parse(localStorage.getItem(KEYS.REGULATIONS) || '[]'),
+  saveRegulations: (r: Regulation[]) => localStorage.setItem(KEYS.REGULATIONS, JSON.stringify(r)),
+  
+  getMarketplace: (): MarketplaceItem[] => JSON.parse(localStorage.getItem(KEYS.MARKETPLACE) || '[]'),
+  saveMarketplace: (m: MarketplaceItem[]) => localStorage.setItem(KEYS.MARKETPLACE, JSON.stringify(m)),
 
-  getStreamingUrl: () => localStorage.getItem(KEYS.STREAM_URL) || 'https://youtube.com',
-  saveStreamingUrl: (u: string) => localStorage.setItem(KEYS.STREAM_URL, u),
-
-  getCircuits: (): Circuit[] => {
-    const data = localStorage.getItem(KEYS.CIRCUITS);
-    return data ? JSON.parse(data) : INITIAL_CIRCUITS;
-  },
-  saveCircuits: (c: Circuit[]) => localStorage.setItem(KEYS.CIRCUITS, JSON.stringify(c)),
-
-  getAssociations: (): Association[] => {
-    const data = localStorage.getItem(KEYS.ASSOCS);
-    return data ? JSON.parse(data) : INITIAL_ASSOCIATIONS;
-  },
-
-  getChampionships: (): Championship[] => {
-    const data = localStorage.getItem(KEYS.CHAMPS);
-    return data ? JSON.parse(data) : INITIAL_CHAMPIONSHIPS;
-  },
-  saveChampionships: (c: Championship[]) => localStorage.setItem(KEYS.CHAMPS, JSON.stringify(c)),
-
-  getMarketplace: (): MarketplaceItem[] => {
-    const data = localStorage.getItem(KEYS.MARKET);
-    return data ? JSON.parse(data) : [];
-  },
-  saveMarketplace: (m: MarketplaceItem[]) => localStorage.setItem(KEYS.MARKET, JSON.stringify(m)),
-
-  getCategoryRankings: (category: string): { ranking: number; number: string; name: string }[] => {
-    const data = localStorage.getItem('pkn_rankings_' + category);
-    return data ? JSON.parse(data) : [];
-  },
-
-  getTrackStatus: (): TrackFlag => {
-    return (localStorage.getItem(KEYS.TRACK_STATUS) as TrackFlag) || TrackFlag.VERDE;
-  },
-
-  saveTrackStatus: (status: TrackFlag) => localStorage.setItem(KEYS.TRACK_STATUS, status)
+  getAssociations: () => INITIAL_ASSOCIATIONS,
+  getCategoryRankings: (category: string) => storageService.getPilots().filter(p => p.category === category)
 };

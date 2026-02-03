@@ -102,6 +102,7 @@ const Inscripciones: React.FC = () => {
       sportsLicense: formData.sportsLicense,
       transponderId: `TX-${formData.number}`,
       lastUpdated: new Date().toISOString().split('T')[0],
+      createdAt: Date.now(), // Timestamp de llegada
       conductPoints: 10,
       stats: { wins: 0, podiums: 0, poles: 0 }
     };
@@ -125,23 +126,23 @@ const Inscripciones: React.FC = () => {
   };
 
   return (
-    <div className="bg-zinc-950 py-12 min-h-screen relative overflow-hidden">
+    <div className="bg-black py-12 min-h-screen relative overflow-hidden">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         <div className="mb-12 text-center">
-          <div className="bg-red-600 w-20 h-20 rounded-[2rem] flex items-center justify-center mx-auto mb-8 shadow-2xl shadow-red-600/20">
-            <FileCheck size={40} className="text-white" />
+          <div className="bg-yellow-400 w-20 h-20 rounded-[2rem] flex items-center justify-center mx-auto mb-8 shadow-2xl shadow-yellow-400/20">
+            <FileCheck size={40} className="text-black" />
           </div>
-          <h1 className="text-6xl font-black italic oswald uppercase text-white mb-6 tracking-tighter">Portal de <span className="text-red-600">Inscripciones</span></h1>
+          <h1 className="text-6xl font-black italic oswald uppercase text-white mb-6 tracking-tighter">Portal de <span className="text-yellow-400">Inscripciones</span></h1>
           <p className="text-zinc-500 max-w-2xl mx-auto font-bold uppercase text-[10px] tracking-widest leading-relaxed">Registro inteligente para pilotos federados. Los datos de ranking y numeración se validarán automáticamente.</p>
         </div>
 
         <div className="max-w-xl mx-auto bg-zinc-900 border border-zinc-800 p-10 rounded-[3rem] shadow-2xl text-center">
-           <div className="bg-zinc-950 p-6 rounded-3xl border border-zinc-800 mb-6 text-red-600 inline-block"><UserPlus size={48} /></div>
+           <div className="bg-black p-6 rounded-3xl border border-zinc-800 mb-6 text-yellow-400 inline-block"><UserPlus size={48} /></div>
            <h3 className="text-2xl font-black oswald uppercase text-white mb-4">Inscripción Directa</h3>
            <p className="text-zinc-500 text-[10px] font-black uppercase tracking-widest mb-10">Inicia tu registro seleccionando la categoría de competencia.</p>
            <button 
              onClick={() => setShowForm(true)}
-             className="w-full bg-red-600 hover:bg-red-700 text-white font-black uppercase py-5 rounded-2xl shadow-xl transition-all flex items-center justify-center gap-3"
+             className="w-full bg-yellow-400 hover:bg-yellow-500 text-black font-black uppercase py-5 rounded-2xl shadow-xl transition-all flex items-center justify-center gap-3"
            >
              Abrir Formulario Oficial
            </button>
@@ -156,7 +157,7 @@ const Inscripciones: React.FC = () => {
             {!submitted ? (
               <>
                 <div className="flex items-center gap-4 mb-8">
-                   <div className="bg-red-600 p-3 rounded-2xl shadow-lg"><Zap className="text-white" size={24} /></div>
+                   <div className="bg-yellow-400 p-3 rounded-2xl shadow-lg"><Zap className="text-black" size={24} /></div>
                    <h2 className="text-3xl font-black oswald uppercase text-white">{step === 1 ? 'Paso 1: Categoría' : 'Paso 2: Datos'}</h2>
                 </div>
                 
@@ -166,17 +167,17 @@ const Inscripciones: React.FC = () => {
                         <button 
                           key={c} 
                           onClick={() => { setSelectedCategory(c); setStep(2); }}
-                          className="w-full bg-zinc-950 border border-zinc-800 hover:border-red-600 text-white font-bold uppercase text-xs py-5 px-6 rounded-2xl flex justify-between items-center group transition-all"
+                          className="w-full bg-black border border-zinc-800 hover:border-yellow-400 text-white font-bold uppercase text-xs py-5 px-6 rounded-2xl flex justify-between items-center group transition-all"
                         >
                           {c}
-                          <ChevronRight size={18} className="text-zinc-700 group-hover:text-red-600" />
+                          <ChevronRight size={18} className="text-zinc-700 group-hover:text-yellow-400" />
                         </button>
                       ))}
                    </div>
                 ) : (
                    <form onSubmit={handleDirectSubmit} className="space-y-6 animate-in slide-in-from-right-4 duration-300">
-                      <div className="bg-zinc-950 border border-zinc-800 p-4 rounded-2xl flex justify-between items-center mb-6">
-                         <span className="text-[10px] font-black uppercase text-red-500 tracking-widest">{selectedCategory}</span>
+                      <div className="bg-black border border-zinc-800 p-4 rounded-2xl flex justify-between items-center mb-6">
+                         <span className="text-[10px] font-black uppercase text-yellow-400 tracking-widest">{selectedCategory}</span>
                          <button type="button" onClick={() => setStep(1)} className="text-[8px] font-black uppercase text-zinc-600 hover:text-white underline">Cambiar Categoría</button>
                       </div>
 
@@ -189,7 +190,7 @@ const Inscripciones: React.FC = () => {
                             type="text" 
                             value={formData.name}
                             onChange={(e) => setFormData({...formData, name: e.target.value})}
-                            className={`w-full bg-zinc-950 border rounded-3xl pl-14 pr-6 py-5 text-white outline-none font-bold uppercase text-sm transition-all ${errors.name ? 'border-red-600' : 'border-zinc-800 focus:border-red-600'}`}
+                            className={`w-full bg-black border rounded-3xl pl-14 pr-6 py-5 text-white outline-none font-bold uppercase text-sm transition-all ${errors.name ? 'border-red-600' : 'border-zinc-800 focus:border-yellow-400'}`}
                             placeholder="Buscar en el ranking..."
                           />
                           {isAutoValidated && (
@@ -211,7 +212,7 @@ const Inscripciones: React.FC = () => {
                             onKeyDown={handleOnlyNumbers}
                             value={formData.number} 
                             onChange={(e) => setFormData({...formData, number: e.target.value})} 
-                            className={`w-full bg-zinc-950 border rounded-3xl px-6 py-5 text-center font-black text-3xl oswald transition-all ${errors.number ? 'border-red-600' : isAutoValidated ? 'border-emerald-500/50 text-emerald-500' : 'border-zinc-800 text-white'}`} 
+                            className={`w-full bg-black border rounded-3xl px-6 py-5 text-center font-black text-3xl oswald transition-all ${errors.number ? 'border-red-600' : isAutoValidated ? 'border-emerald-500/50 text-emerald-500' : 'border-zinc-800 text-white focus:border-yellow-400'}`} 
                             placeholder="00" 
                           />
                           {errors.number && <p className="text-[9px] text-red-600 font-black uppercase text-center mt-1">{errors.number}</p>}
@@ -224,7 +225,7 @@ const Inscripciones: React.FC = () => {
                             onKeyDown={handleOnlyNumbers}
                             value={formData.ranking} 
                             onChange={(e) => setFormData({...formData, ranking: e.target.value})} 
-                            className={`w-full bg-zinc-950 border rounded-3xl px-6 py-5 text-center font-black text-2xl transition-all ${errors.ranking ? 'border-red-600' : isAutoValidated ? 'border-emerald-500/50 text-emerald-500' : 'border-zinc-800 text-white'}`} 
+                            className={`w-full bg-black border rounded-3xl px-6 py-5 text-center font-black text-2xl transition-all ${errors.ranking ? 'border-red-600' : isAutoValidated ? 'border-emerald-500/50 text-emerald-500' : 'border-zinc-800 text-white focus:border-yellow-400'}`} 
                             placeholder="99" 
                           />
                           {errors.ranking && <p className="text-[9px] text-red-600 font-black uppercase text-center mt-1">{errors.ranking}</p>}
@@ -240,7 +241,7 @@ const Inscripciones: React.FC = () => {
                             onKeyDown={handleOnlyNumbers}
                             value={formData.medicalLicense} 
                             onChange={(e) => setFormData({...formData, medicalLicense: e.target.value})} 
-                            className={`w-full bg-zinc-950 border rounded-3xl px-6 py-5 text-white outline-none font-bold text-sm text-center transition-all ${errors.medicalLicense ? 'border-red-600' : 'border-zinc-800 focus:border-red-600'}`} 
+                            className={`w-full bg-black border rounded-3xl px-6 py-5 text-white outline-none font-bold text-sm text-center transition-all ${errors.medicalLicense ? 'border-red-600' : 'border-zinc-800 focus:border-yellow-400'}`} 
                             placeholder="0000" 
                           />
                           {errors.medicalLicense && <p className="text-[9px] text-red-600 font-black uppercase text-center mt-1">{errors.medicalLicense}</p>}
@@ -253,14 +254,14 @@ const Inscripciones: React.FC = () => {
                             onKeyDown={handleOnlyNumbers}
                             value={formData.sportsLicense} 
                             onChange={(e) => setFormData({...formData, sportsLicense: e.target.value})} 
-                            className={`w-full bg-zinc-950 border rounded-3xl px-6 py-5 text-white outline-none font-bold text-sm text-center transition-all ${errors.sportsLicense ? 'border-red-600' : 'border-zinc-800 focus:border-red-600'}`} 
+                            className={`w-full bg-black border rounded-3xl px-6 py-5 text-white outline-none font-bold text-sm text-center transition-all ${errors.sportsLicense ? 'border-red-600' : 'border-zinc-800 focus:border-yellow-400'}`} 
                             placeholder="0000" 
                           />
                           {errors.sportsLicense && <p className="text-[9px] text-red-600 font-black uppercase text-center mt-1">{errors.sportsLicense}</p>}
                         </div>
                       </div>
 
-                      <button type="submit" className="w-full bg-red-600 hover:bg-red-700 text-white font-black uppercase py-6 rounded-3xl shadow-2xl shadow-red-600/30 transition-all flex items-center justify-center gap-3 mt-6">
+                      <button type="submit" className="w-full bg-yellow-400 hover:bg-yellow-500 text-black font-black uppercase py-6 rounded-3xl shadow-2xl shadow-yellow-400/30 transition-all flex items-center justify-center gap-3 mt-6">
                         Confirmar Inscripción
                       </button>
                    </form>
