@@ -17,6 +17,7 @@ const Mercado: React.FC = () => {
   });
 
   useEffect(() => {
+    // Fixed storage call to get marketplace items
     const data = storageService.getMarketplace();
     if (data.length === 0) {
       const demoItems: MarketplaceItem[] = [
@@ -24,6 +25,7 @@ const Mercado: React.FC = () => {
         { id: 'm2', title: 'Motor 150cc KDO Preparado', price: '$850.000 ARS', category: 'Motor', condition: 'Nuevo', image: 'https://images.unsplash.com/photo-1558981285-6f0c94958bb6?w=400', contact: '+54 11 8765 4321' }
       ];
       setItems(demoItems);
+      // Fixed storage call to save marketplace items
       storageService.saveMarketplace(demoItems);
     } else {
       setItems(data);
@@ -39,6 +41,7 @@ const Mercado: React.FC = () => {
     };
     const updated = [item, ...items];
     setItems(updated);
+    // Fixed storage call to save marketplace items
     storageService.saveMarketplace(updated);
     setShowModal(false);
     setNewItem({title: '', price: '', category: 'Kart Completo', condition: 'Usado', contact: ''});
@@ -78,7 +81,7 @@ const Mercado: React.FC = () => {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
           {filteredItems.map(item => (
-            <div key={item.id} className="bg-zinc-900 border border-zinc-800 rounded-[2.5rem] overflow-hidden group hover:border-red-600 transition-all shadow-2xl flex flex-col group h-full">
+            <div key={item.id} className="bg-zinc-900 border border-zinc-800 rounded-[2.5rem] overflow-hidden group hover:border-red-600 transition-all shadow-2xl flex flex-col h-full">
               <div className="h-56 relative overflow-hidden">
                  <img src={item.image} alt={item.title} className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-700 group-hover:scale-110" />
                  <div className="absolute top-6 right-6 bg-black/90 backdrop-blur-xl px-4 py-1.5 rounded-xl text-[9px] font-black uppercase text-red-500 border border-red-600/30 shadow-2xl">{item.condition}</div>
@@ -108,7 +111,9 @@ const Mercado: React.FC = () => {
         {showModal && (
           <div className="fixed inset-0 z-[150] flex items-center justify-center p-6 bg-black/98 backdrop-blur-2xl">
              <div className="bg-zinc-900 w-full max-w-xl rounded-[3.5rem] border border-zinc-800 p-12 shadow-2xl relative animate-in zoom-in-95 duration-300">
-                <button onClick={() => setShowModal(false)} className="absolute top-10 right-10 text-zinc-500 hover:text-white bg-zinc-950 p-2 rounded-full transition-all"><X size={24} /></button>
+                <button onClick={() => setShowModal(false)} className="absolute top-10 right-10 text-zinc-500 hover:text-white bg-zinc-950 p-2 rounded-full transition-all">
+                   <svg width={24} height={24} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                </button>
                 
                 <div className="flex items-center gap-4 mb-10">
                   <div className="bg-red-600 p-3 rounded-2xl shadow-xl"><Zap className="text-white" size={24} /></div>
@@ -153,6 +158,7 @@ const Mercado: React.FC = () => {
              </div>
           </div>
         )}
+      </div>
     </div>
   );
 };

@@ -9,12 +9,12 @@ const Hero: React.FC = () => {
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
         <div className="max-w-2xl animate-in fade-in slide-in-from-left-8 duration-700">
           <div className="flex items-center gap-2 mb-6">
-            <span className="w-10 h-[2px] bg-yellow-400"></span>
-            <h2 className="text-yellow-400 font-black uppercase tracking-[0.4em] text-[10px] oswald italic">KDO - Kart Disciplina Oficial</h2>
+            <span className="w-10 h-[2px] bg-blue-600"></span>
+            <h2 className="text-blue-500 font-black uppercase tracking-[0.4em] text-[10px] oswald italic">KDO - Kart Disciplina Oficial</h2>
           </div>
           <h1 className="text-6xl md:text-8xl font-black italic oswald text-white mb-6 uppercase leading-[0.9] tracking-tighter">
             PASIÓN <br />
-            <span className="text-yellow-400">DISCIPLINADA</span>
+            <span className="text-blue-600">DISCIPLINADA</span>
           </h1>
           <p className="text-lg text-zinc-300 mb-10 leading-relaxed font-medium max-w-lg">
             La comunidad más grande de karting en tierra de la provincia. 
@@ -23,7 +23,7 @@ const Hero: React.FC = () => {
           <div className="flex flex-wrap gap-5">
             <Link 
               to="/campeonatos" 
-              className="bg-yellow-400 hover:bg-yellow-500 text-black px-10 py-5 rounded-2xl font-black uppercase text-xs flex items-center gap-3 transition-all transform hover:-translate-y-1 shadow-2xl shadow-yellow-400/20"
+              className="bg-blue-600 hover:bg-blue-700 text-white px-10 py-5 rounded-2xl font-black uppercase text-xs flex items-center gap-3 transition-all transform hover:-translate-y-1 shadow-2xl shadow-blue-600/20"
             >
               Ver Campeonatos
               <ChevronRight size={18} />

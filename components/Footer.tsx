@@ -1,5 +1,6 @@
 
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { Facebook, Twitter, Instagram, Youtube } from 'lucide-react';
 
 const Footer: React.FC = () => {
@@ -11,9 +12,9 @@ const Footer: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-16">
           <div className="col-span-1 md:col-span-1">
              <div className="flex items-center gap-3 mb-6">
-                <img src={LOGO_URL} alt="KDO" className="w-12 h-12 rounded-full border border-yellow-400 bg-white object-contain p-0.5" />
-                <div className="bg-yellow-400 px-3 py-1.5 rounded italic font-black text-black text-lg oswald tracking-tighter w-fit">
-                   KDO <span className="text-white bg-black px-1.5 rounded-sm text-[8px] ml-1">KART DISCIPLINA OFICIAL</span>
+                <img src={LOGO_URL} alt="KDO" className="w-12 h-12 rounded-full border border-blue-600 bg-white object-contain p-0.5" />
+                <div className="bg-blue-600 px-3 py-1.5 rounded italic font-black text-white text-lg oswald tracking-tighter w-fit shadow-lg">
+                   KDO <span className="text-white bg-black/40 px-1.5 rounded-sm text-[8px] ml-1">KART DISCIPLINA OFICIAL</span>
                  </div>
              </div>
             <p className="text-zinc-500 leading-relaxed text-sm font-medium">
@@ -24,28 +25,28 @@ const Footer: React.FC = () => {
           <div>
             <h4 className="text-white font-black uppercase text-[10px] tracking-widest mb-6">Institucional</h4>
             <ul className="space-y-4 text-zinc-500 text-xs font-bold uppercase tracking-tight">
-              <li><a href="#" className="hover:text-yellow-400 transition-colors">Historia KDO</a></li>
-              <li><a href="#" className="hover:text-yellow-400 transition-colors">Contacto Oficial</a></li>
-              <li><a href="#" className="hover:text-yellow-400 transition-colors">Prensa y Medios</a></li>
+              <li><Link to="/historia" className="hover:text-blue-500 transition-colors">Historia KDO</Link></li>
+              <li><Link to="/reglamentos" className="hover:text-blue-500 transition-colors">Normativas</Link></li>
+              <li><Link to="/" className="hover:text-blue-500 transition-colors">Prensa y Medios</Link></li>
             </ul>
           </div>
 
           <div>
             <h4 className="text-white font-black uppercase text-[10px] tracking-widest mb-6">Accesos</h4>
             <ul className="space-y-4 text-zinc-500 text-xs font-bold uppercase tracking-tight">
-              <li><a href="#/circuitos" className="hover:text-yellow-400 transition-colors">Circuitos</a></li>
-              <li><a href="#/campeonatos" className="hover:text-yellow-400 transition-colors">Torneos</a></li>
-              <li><a href="#/inscripciones" className="hover:text-yellow-400 transition-colors">Inscribirse</a></li>
+              <li><Link to="/circuitos" className="hover:text-blue-500 transition-colors">Circuitos</Link></li>
+              <li><Link to="/campeonatos" className="hover:text-blue-500 transition-colors">Torneos</Link></li>
+              <li><Link to="/inscripciones" className="hover:text-blue-500 transition-colors">Inscribirse</Link></li>
             </ul>
           </div>
 
           <div>
             <h4 className="text-white font-black uppercase text-[10px] tracking-widest mb-6">Comunidad</h4>
             <div className="flex gap-4">
-              <a href="#" className="bg-zinc-900 p-3 rounded-full text-zinc-400 hover:text-black hover:bg-yellow-400 transition-all shadow-lg"><Facebook size={18} /></a>
-              <a href="#" className="bg-zinc-900 p-3 rounded-full text-zinc-400 hover:text-black hover:bg-yellow-400 transition-all shadow-lg"><Twitter size={18} /></a>
-              <a href="#" className="bg-zinc-900 p-3 rounded-full text-zinc-400 hover:text-black hover:bg-yellow-400 transition-all shadow-lg"><Instagram size={18} /></a>
-              <a href="#" className="bg-zinc-900 p-3 rounded-full text-zinc-400 hover:text-black hover:bg-yellow-400 transition-all shadow-lg"><Youtube size={18} /></a>
+              <a href="#" className="bg-zinc-900 p-3 rounded-full text-zinc-400 hover:text-white hover:bg-blue-600 transition-all shadow-lg"><Facebook size={18} /></a>
+              <a href="#" className="bg-zinc-900 p-3 rounded-full text-zinc-400 hover:text-white hover:bg-blue-600 transition-all shadow-lg"><Twitter size={18} /></a>
+              <a href="#" className="bg-zinc-900 p-3 rounded-full text-zinc-400 hover:text-white hover:bg-blue-600 transition-all shadow-lg"><Instagram size={18} /></a>
+              <a href="#" className="bg-zinc-900 p-3 rounded-full text-zinc-400 hover:text-white hover:bg-blue-600 transition-all shadow-lg"><Youtube size={18} /></a>
             </div>
           </div>
         </div>
@@ -53,8 +54,8 @@ const Footer: React.FC = () => {
         <div className="border-t border-zinc-900 pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
           <p className="text-zinc-800 text-[10px] font-black uppercase tracking-widest">© 2026 KDO - KART DISCIPLINA OFICIAL. TODOS LOS DERECHOS RESERVADOS.</p>
           <div className="flex gap-6 text-zinc-800 text-[10px] font-black uppercase tracking-widest">
-            <a href="#" className="hover:text-zinc-400 transition-colors">Términos</a>
-            <a href="#" className="hover:text-zinc-400 transition-colors">Privacidad</a>
+            <Link to="/" className="hover:text-zinc-400 transition-colors">Términos</Link>
+            <Link to="/" className="hover:text-zinc-400 transition-colors">Privacidad</Link>
           </div>
         </div>
       </div>

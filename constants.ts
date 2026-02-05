@@ -28,6 +28,7 @@ export const INITIAL_REGISTRATION_LINKS = INITIAL_CATEGORIES.map(cat => ({
   url: '#'
 }));
 
+// Pilot objects now correctly match the Pilot interface with the association property
 export const INITIAL_PILOTS: Pilot[] = [
   { id: '1', number: '1', name: 'JUAN ACOSTA', category: 'KDO Power', status: Status.CONFIRMADO, ranking: 1, lastUpdated: '2026-05-01', createdAt: 1714560000000, association: 'KDO Kart Disciplina Oficial', medicalLicense: '1001', sportsLicense: '2001', transponderId: 'TX-1001', conductPoints: 10, stats: { wins: 5, podiums: 10, poles: 2, points: 145.5 } },
   { id: '2', number: '2', name: 'PEDRO RAMIREZ', category: 'KDO Power', status: Status.CONFIRMADO, ranking: 2, lastUpdated: '2026-05-01', createdAt: 1714563600000, association: 'KDO Kart Disciplina Oficial', medicalLicense: '1002', sportsLicense: '2002', transponderId: 'TX-1002', conductPoints: 9, stats: { wins: 2, podiums: 8, poles: 1, points: 112.0 } },

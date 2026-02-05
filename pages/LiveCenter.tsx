@@ -1,14 +1,15 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Activity, Clock, Zap, Signal, Shield, Flag, ChevronUp, ChevronDown, Minus, Share2, FileDown, Check, ExternalLink, Settings, Wifi, WifiOff } from 'lucide-react';
-import { storageService, ExtendedSystemSettings } from '../services/storageService';
-import { TimingRow, TrackFlag } from '../types';
+// Added XCircle to imports to fix "Cannot find name 'XCircle'" error
+import { Activity, Clock, Zap, Signal, Shield, Flag, ChevronUp, ChevronDown, Minus, Share2, FileDown, Check, ExternalLink, Settings, Wifi, WifiOff, Star, Award, XCircle } from 'lucide-react';
+import { storageService } from '../services/storageService';
+import { TimingRow, TrackFlag, SystemSettings } from '../types';
 import { generateLiveTimingPDF } from '../utils/pdfGenerator';
 
 const LiveCenter: React.FC = () => {
   const [trackStatus, setTrackStatus] = useState<TrackFlag>(TrackFlag.VERDE);
   const [timing, setTiming] = useState<TimingRow[]>([]);
-  const [settings, setSettings] = useState<ExtendedSystemSettings>(storageService.getSettings());
+  const [settings, setSettings] = useState<SystemSettings>(storageService.getSettings());
   const [sessionTime, setSessionTime] = useState("00:12:30");
   const [copied, setCopied] = useState(false);
   const [connectionStatus, setConnectionStatus] = useState<'connected' | 'disconnected' | 'simulated'>('simulated');
@@ -78,7 +79,6 @@ const LiveCenter: React.FC = () => {
     }
   };
 
-  // Fixed runSimulation to correctly type delta and returned rows
   const runSimulation = () => {
     setTiming(prev => {
       if (prev.length === 0) {
@@ -89,15 +89,16 @@ const LiveCenter: React.FC = () => {
         ] as TimingRow[];
       }
 
+      const topTime = 47.9; // Baseline session record for simulation
+
       return prev.map(row => {
         if (row.status === 'PITS') return row;
         
         const randomFactor = Math.random();
-        // Simular terminación de vuelta cada ~15% de los ticks
         if (randomFactor > 0.85) {
           const newLap = row.laps + 1;
           const currentBest = parseFloat(row.bestLap);
-          const lapTimeVal = currentBest + (Math.random() - 0.5) * 0.4;
+          const lapTimeVal = currentBest + (Math.random() - 0.45) * 0.4;
           const randomLapTime = lapTimeVal.toFixed(3);
           const isBetter = parseFloat(randomLapTime) < currentBest;
           
@@ -111,7 +112,7 @@ const LiveCenter: React.FC = () => {
             lastLap: randomLapTime,
             bestLap: isBetter ? randomLapTime : row.bestLap,
             isPersonalBest: isBetter,
-            isSessionBest: isBetter && parseFloat(randomLapTime) < 47.9,
+            isSessionBest: isBetter && parseFloat(randomLapTime) < topTime,
             delta: (isBetter ? 'down' : 'up') as 'down' | 'up'
           };
         }
@@ -122,9 +123,10 @@ const LiveCenter: React.FC = () => {
           s1: (12 + Math.random() * 0.5).toFixed(1)
         };
       }).sort((a, b) => {
-        // Ordenar por vueltas y luego por mejor tiempo si están en la misma vuelta
         if (a.laps !== b.laps) return b.laps - a.laps;
-        return parseFloat(a.bestLap) - parseFloat(b.bestLap);
+        const aBest = a.bestLap ? parseFloat(a.bestLap) : 999;
+        const bBest = b.bestLap ? parseFloat(b.bestLap) : 999;
+        return aBest - bBest;
       }).map((row, i) => ({ ...row, pos: i + 1 })) as TimingRow[];
     });
   };
@@ -160,7 +162,7 @@ const LiveCenter: React.FC = () => {
 
   return (
     <div className="bg-black min-h-screen text-zinc-300 font-mono flex flex-col overflow-hidden">
-      {/* TOP HEADER: STATUS & CONTROL */}
+      {/* TOP HEADER */}
       <div className="bg-zinc-900 border-b border-white/10 p-4 flex flex-col md:flex-row items-center justify-between shadow-2xl z-50 gap-4">
          <div className="flex items-center gap-6">
             <div className={`w-12 h-12 rounded-2xl ${currentFlagStyle.bg} ${currentFlagStyle.animate ? 'animate-pulse' : ''} flex items-center justify-center text-black shadow-[0_0_30px_rgba(255,255,255,0.1)]`}>
@@ -171,7 +173,7 @@ const LiveCenter: React.FC = () => {
                  {settings.useLocalOrbits ? 'ORBITS 5 LIVE FEED' : 'KDO SIMULATOR • LIVE CENTER'}
                </h1>
                <div className="flex items-center gap-2">
-                  <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded ${currentFlagStyle.bg} text-black`}>{trackStatus}</span>
+                  <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded ${currentFlagStyle.bg} text-black transition-colors duration-500`}>{trackStatus}</span>
                   <span className="text-[9px] font-bold text-zinc-500 uppercase tracking-widest">{currentFlagStyle.text}</span>
                </div>
             </div>
@@ -209,6 +211,7 @@ const LiveCenter: React.FC = () => {
          </div>
       </div>
 
+      {/* FEED TICKER */}
       <div className="bg-black/50 border-b border-white/5 py-1.5 px-6 h-10 flex items-center gap-6 overflow-hidden">
         <div className="flex items-center gap-2 shrink-0 border-r border-white/10 pr-4 h-full">
            <Activity size={12} className="text-emerald-500" />
@@ -222,10 +225,10 @@ const LiveCenter: React.FC = () => {
               {event.text}
             </span>
           ))}
-          {eventLog.length === 0 && <span className="text-[10px] font-black uppercase text-zinc-700">Analizando sectores... No hay eventos recientes.</span>}
         </div>
       </div>
 
+      {/* TIMING TABLE */}
       <div className="flex-grow overflow-auto relative custom-scrollbar">
          <table className="w-full text-left border-collapse">
             <thead className="sticky top-0 z-40 bg-black/90 backdrop-blur-3xl border-b border-white/10">
@@ -245,7 +248,7 @@ const LiveCenter: React.FC = () => {
             </thead>
             <tbody className="divide-y divide-white/[0.03]">
                {timing.map((row) => (
-                  <tr key={row.no} className={`hover:bg-yellow-400/[0.03] transition-colors group ${row.status === 'PITS' ? 'opacity-40' : ''}`}>
+                  <tr key={row.no} className={`transition-all duration-700 ease-in-out hover:bg-white/[0.02] group ${row.status === 'PITS' ? 'opacity-40' : ''}`}>
                      <td className="px-6 py-4 text-center">
                         <span className={`oswald italic font-black text-2xl ${row.pos === 1 ? 'text-yellow-400' : 'text-zinc-600'}`}>{row.pos}</span>
                      </td>
@@ -258,27 +261,35 @@ const LiveCenter: React.FC = () => {
                               <p className="text-sm font-black text-white uppercase tracking-tight group-hover:text-yellow-400 transition-colors">{row.name}</p>
                               <div className="flex items-center gap-2 mt-1">
                                  <Signal size={10} className={row.transponderSignal === 'Good' || connectionStatus === 'simulated' ? 'text-emerald-500' : 'text-orange-500'} />
-                                 <span className="text-[8px] font-black text-zinc-600 uppercase tracking-widest">Signal OK</span>
+                                 <span className="text-[8px] font-black text-zinc-600 uppercase tracking-widest">Loop Sync</span>
                               </div>
                            </div>
                            <div className="ml-auto">
-                              {row.delta === 'up' && <ChevronUp size={16} className="text-red-500" />}
-                              {row.delta === 'down' && <ChevronDown size={16} className="text-emerald-500" />}
+                              {row.delta === 'up' && <ChevronUp size={16} className="text-red-500 animate-in fade-in" />}
+                              {row.delta === 'down' && <ChevronDown size={16} className="text-emerald-500 animate-in fade-in" />}
                               {row.delta === 'steady' && <Minus size={16} className="text-zinc-700" />}
                            </div>
                         </div>
                      </td>
-                     <td className="px-4 py-4 text-center font-bold text-zinc-500 text-sm tabular-nums">{row.laps}</td>
+                     <td className="px-4 py-4 text-center font-bold text-zinc-500 text-sm tabular-nums transition-all duration-300">{row.laps}</td>
                      <td className="px-6 py-4 text-right tabular-nums">
-                        <span className={`text-xs font-black ${row.isPersonalBest ? 'text-emerald-400' : 'text-zinc-300'}`}>{row.lastLap}</span>
+                        <span className={`text-xs font-black transition-colors duration-500 ${row.isPersonalBest ? 'text-emerald-400' : 'text-zinc-300'}`}>{row.lastLap}</span>
                      </td>
                      <td className="px-6 py-4 text-right tabular-nums">
-                        <div className={`inline-block px-3 py-1 rounded-lg ${row.isSessionBest ? 'bg-yellow-400/20 text-yellow-400 border border-yellow-400/30' : row.isPersonalBest ? 'bg-emerald-600/10 text-emerald-400' : 'bg-black text-zinc-500'}`}>
-                           <span className="text-sm font-black tracking-tighter">{row.bestLap}</span>
+                        <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-xl border transition-all duration-1000 ${
+                           row.isSessionBest 
+                           ? 'bg-purple-600/20 text-purple-400 border-purple-500/40 shadow-[0_0_15px_rgba(168,85,247,0.2)]' 
+                           : row.isPersonalBest 
+                           ? 'bg-emerald-600/10 text-emerald-400 border-emerald-500/20' 
+                           : 'bg-black/40 border-white/5 text-zinc-500'
+                        }`}>
+                           {row.isSessionBest && <Award size={14} className="animate-pulse" />}
+                           {row.isPersonalBest && !row.isSessionBest && <Star size={12} fill="currentColor" />}
+                           <span className="text-sm font-black tracking-tighter transition-all">{row.bestLap}</span>
                         </div>
                      </td>
                      <td className="px-6 py-4 text-center tabular-nums">
-                        <span className={`text-[10px] font-black italic ${row.isS1Best ? 'text-yellow-400' : 'text-zinc-600'}`}>{row.s1}</span>
+                        <span className={`text-[10px] font-black italic transition-colors duration-500 ${row.isS1Best ? 'text-purple-400' : 'text-zinc-600'}`}>{row.s1}</span>
                      </td>
                      <td className="px-6 py-4 text-right text-[10px] font-black text-zinc-600 tabular-nums">{row.gap}</td>
                      <td className="px-6 py-4 text-right text-[10px] font-bold text-zinc-700 tabular-nums">{row.interval}</td>
@@ -286,7 +297,7 @@ const LiveCenter: React.FC = () => {
                         <span className="text-xs font-black text-zinc-500 oswald">{row.predictive || '---'}</span>
                      </td>
                      <td className="px-6 py-4 text-center">
-                        <span className={`px-2 py-0.5 rounded text-[8px] font-black uppercase border ${
+                        <span className={`px-2 py-0.5 rounded text-[8px] font-black uppercase border transition-all duration-500 ${
                            row.status === 'PITS' ? 'bg-red-600/10 text-red-500 border-red-600/20' : 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20'
                         }`}>
                            {row.status}
@@ -298,7 +309,7 @@ const LiveCenter: React.FC = () => {
                  <tr>
                     <td colSpan={11} className="py-24 text-center">
                        <Zap size={48} className="text-zinc-800 mx-auto mb-4 animate-pulse" />
-                       <p className="text-zinc-600 text-[10px] font-black uppercase tracking-widest">Esperando señal de transponders...</p>
+                       <p className="text-zinc-600 text-[10px] font-black uppercase tracking-widest">Escaneando transponders en pista...</p>
                     </td>
                  </tr>
                )}
@@ -306,10 +317,37 @@ const LiveCenter: React.FC = () => {
          </table>
       </div>
 
+      {/* FOOTER BAR */}
+      <div className="bg-black border-t border-white/5 p-3 px-8 flex justify-between items-center z-50">
+         <div className="flex items-center gap-10">
+            <div className="flex items-center gap-4">
+               <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 rounded-full bg-purple-500 shadow-[0_0_8px_rgba(168,85,247,0.6)]"></div>
+                  <span className="text-[8px] font-black uppercase text-zinc-400">Record Sesión</span>
+               </div>
+               <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.6)]"></div>
+                  <span className="text-[8px] font-black uppercase text-zinc-400">Mejor Personal</span>
+               </div>
+            </div>
+            <div className="h-4 w-px bg-white/10"></div>
+            <div className="flex items-center gap-2">
+               <div className={`w-1.5 h-1.5 rounded-full ${connectionStatus === 'connected' ? 'bg-emerald-500 animate-pulse' : 'bg-red-500'}`}></div>
+               <span className="text-[9px] font-black uppercase text-zinc-500 tracking-widest">Mylaps Loop: {connectionStatus === 'connected' ? 'Sync OK' : 'Offline'}</span>
+            </div>
+         </div>
+         <div className="text-[10px] font-black text-yellow-400 uppercase oswald italic tracking-tighter">
+            CronoSync KDO v8.5.0 • Live Racing Engine
+         </div>
+      </div>
+
+      {/* SETTINGS MODAL */}
       {showSettings && (
         <div className="fixed inset-0 z-[200] bg-black/90 backdrop-blur-xl flex items-center justify-center p-6">
-          <div className="bg-zinc-900 border border-zinc-800 w-full max-w-md p-10 rounded-[2.5rem] shadow-2xl relative animate-in zoom-in-95 duration-200">
-             <button onClick={() => setShowSettings(false)} className="absolute top-8 right-8 text-zinc-500 hover:text-white"><X size={24} /></button>
+          <div className="bg-zinc-900 border border-white/10 w-full max-w-md p-10 rounded-[3rem] shadow-2xl relative animate-in zoom-in-95 duration-200">
+             <button onClick={() => setShowSettings(false)} className="absolute top-8 right-8 text-zinc-500 hover:text-white transition-colors">
+                <XCircle size={28} />
+             </button>
              <h2 className="text-3xl font-black oswald uppercase text-white italic mb-6">Orbits 5 <span className="text-yellow-400">Settings</span></h2>
              
              <div className="space-y-6">
@@ -326,7 +364,7 @@ const LiveCenter: React.FC = () => {
                 
                 <div className="p-4 bg-yellow-400/5 border border-yellow-400/10 rounded-2xl">
                    <p className="text-[10px] font-medium text-zinc-400 leading-relaxed italic">
-                     Asegúrese de que el servidor Orbits tenga habilitado el "XML/JSON HTTP Output" en la configuración de distribución de datos.
+                     El sistema KDO sincroniza automáticamente con el servidor Orbits local para visualización masiva de tiempos.
                    </p>
                 </div>
 
@@ -348,31 +386,8 @@ const LiveCenter: React.FC = () => {
           </div>
         </div>
       )}
-
-      <div className="bg-black border-t border-white/5 p-3 px-8 flex justify-between items-center z-50">
-         <div className="flex items-center gap-8">
-            <div className="flex items-center gap-2">
-               <div className={`w-1.5 h-1.5 rounded-full ${connectionStatus === 'connected' ? 'bg-emerald-500 animate-pulse' : 'bg-red-500'}`}></div>
-               <span className="text-[9px] font-black uppercase text-zinc-500">Mylaps Loop: {connectionStatus === 'connected' ? 'Sync OK' : 'Offline'}</span>
-            </div>
-            <div className="flex items-center gap-2">
-               <Activity size={12} className="text-yellow-400" />
-               <span className="text-[9px] font-black uppercase text-zinc-500">Telemetry: 1.5ms Latency</span>
-            </div>
-         </div>
-         <div className="text-[10px] font-black text-yellow-400 uppercase oswald italic tracking-tighter">
-            CronoSync KDO v8.5.0 • High Fidelity Racing Engine
-         </div>
-      </div>
     </div>
   );
 };
-
-const X = ({size, className}: {size: number, className?: string}) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
-    <line x1="18" y1="6" x2="6" y2="18"></line>
-    <line x1="6" y1="6" x2="18" y2="18"></line>
-  </svg>
-);
 
 export default LiveCenter;

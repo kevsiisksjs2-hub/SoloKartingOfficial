@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { storageService } from '../services/storageService';
 import { Pilot, Category, Status } from '../types';
 import { 
@@ -12,14 +12,17 @@ import {
   Hash,
   ShieldCheck,
   IdCard,
-  Radio
+  Radio,
+  Edit3
 } from 'lucide-react';
 
 const AdminNewPilot: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [categories, setCategories] = useState<Category[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [editId, setEditId] = useState<string | null>(null);
 
   const [formData, setFormData] = useState({
     name: '',
@@ -40,36 +43,49 @@ const AdminNewPilot: React.FC = () => {
     }
     const cats = storageService.getCategories();
     setCategories(cats);
-    if (cats.length > 0) {
+
+    // Lógica para modo edición
+    const params = new URLSearchParams(location.search);
+    const id = params.get('edit');
+    if (id) {
+      const p = storageService.getPilots().find(x => x.id === id);
+      if (p) {
+        setEditId(id);
+        setFormData({
+          name: p.name,
+          number: p.number,
+          category: p.category,
+          medicalLicense: p.medicalLicense,
+          sportsLicense: p.sportsLicense,
+          transponderId: p.transponderId,
+          ranking: p.ranking.toString(),
+          status: p.status
+        });
+      }
+    } else if (cats.length > 0) {
       setFormData(prev => ({ ...prev, category: cats[0] }));
     }
-  }, [navigate]);
+  }, [navigate, location.search]);
 
   const validate = () => {
     const newErrors: Record<string, string> = {};
     const currentPilots = storageService.getPilots();
 
     if (!formData.name.trim()) newErrors.name = "El nombre es obligatorio";
-    if (formData.name.trim().length < 3) newErrors.name = "El nombre debe tener al menos 3 caracteres";
     
     if (!formData.number) {
       newErrors.number = "El dorsal es obligatorio";
-    } else if (isNaN(Number(formData.number)) || Number(formData.number) <= 0) {
-      newErrors.number = "Dorsal inválido";
     } else {
-      // VALIDACIÓN DE UNICIDAD
-      const numberExists = currentPilots.some(p => p.number === formData.number.trim());
+      // VALIDACIÓN DE UNICIDAD (excepto si estamos editando el mismo piloto)
+      const numberExists = currentPilots.some(p => p.number === formData.number.trim() && p.id !== editId);
       if (numberExists) {
-        newErrors.number = "Este número de kart ya está asignado a otro piloto";
+        newErrors.number = "Este número de kart ya está asignado";
       }
     }
 
-    if (!formData.ranking) newErrors.ranking = "El ranking es obligatorio";
-    if (isNaN(Number(formData.ranking))) newErrors.ranking = "Debe ser un número";
-
     if (!formData.medicalLicense.trim()) newErrors.medicalLicense = "Licencia médica requerida";
     if (!formData.sportsLicense.trim()) newErrors.sportsLicense = "Licencia deportiva requerida";
-    if (!formData.transponderId.trim()) newErrors.transponderId = "ID de Transponder requerido";
+    if (!formData.transponderId.trim()) newErrors.transponderId = "Transponder requerido";
     if (!formData.category) newErrors.category = "Seleccione una categoría";
 
     setErrors(newErrors);
@@ -81,26 +97,42 @@ const AdminNewPilot: React.FC = () => {
     if (!validate()) return;
 
     setIsSubmitting(true);
-    
-    const newPilot: Pilot = {
-      id: Math.random().toString(36).substr(2, 9),
-      name: formData.name.toUpperCase().trim(),
-      number: formData.number.trim(),
-      category: formData.category,
-      medicalLicense: formData.medicalLicense.trim(),
-      sportsLicense: formData.sportsLicense.trim(),
-      transponderId: formData.transponderId.trim().toUpperCase(),
-      ranking: parseInt(formData.ranking) || 99,
-      status: formData.status as Status,
-      lastUpdated: new Date().toISOString().split('T')[0],
-      createdAt: Date.now(), // Timestamp de creación
-      conductPoints: 10,
-      stats: { wins: 0, podiums: 0, poles: 0 }
-    };
-
     const currentPilots = storageService.getPilots();
-    storageService.savePilots([newPilot, ...currentPilots]);
-    storageService.addLog('ADMIN', `Nuevo piloto registrado: ${newPilot.name} (#${newPilot.number})`);
+    
+    if (editId) {
+      const updated = currentPilots.map(p => p.id === editId ? {
+        ...p,
+        name: formData.name.toUpperCase().trim(),
+        number: formData.number.trim(),
+        category: formData.category,
+        medicalLicense: formData.medicalLicense.trim(),
+        sportsLicense: formData.sportsLicense.trim(),
+        transponderId: formData.transponderId.trim().toUpperCase(),
+        ranking: parseInt(formData.ranking) || 99,
+        status: formData.status as Status,
+        lastUpdated: new Date().toISOString().split('T')[0]
+      } : p);
+      storageService.savePilots(updated);
+      storageService.addLog('ADMIN', `Piloto editado: ${formData.name}`);
+    } else {
+      const newPilot: Pilot = {
+        id: Math.random().toString(36).substr(2, 9),
+        name: formData.name.toUpperCase().trim(),
+        number: formData.number.trim(),
+        category: formData.category,
+        medicalLicense: formData.medicalLicense.trim(),
+        sportsLicense: formData.sportsLicense.trim(),
+        transponderId: formData.transponderId.trim().toUpperCase(),
+        ranking: parseInt(formData.ranking) || 99,
+        status: formData.status as Status,
+        lastUpdated: new Date().toISOString().split('T')[0],
+        createdAt: Date.now(),
+        conductPoints: 10,
+        stats: { wins: 0, podiums: 0, poles: 0 }
+      };
+      storageService.savePilots([newPilot, ...currentPilots]);
+      storageService.addLog('ADMIN', `Nuevo piloto registrado: ${newPilot.name}`);
+    }
 
     setTimeout(() => {
       setIsSubmitting(false);
@@ -128,17 +160,18 @@ const AdminNewPilot: React.FC = () => {
         <header className="mb-12">
           <div className="flex items-center gap-4 mb-4">
             <div className="bg-yellow-400 p-3 rounded-2xl shadow-xl shadow-yellow-400/20">
-              <UserPlus className="text-black" size={32} />
+              {editId ? <Edit3 className="text-black" size={32} /> : <UserPlus className="text-black" size={32} />}
             </div>
             <div>
-              <h1 className="text-4xl font-black oswald uppercase text-white italic tracking-tighter">Nuevo Registro de Piloto</h1>
-              <p className="text-zinc-500 text-[10px] font-black uppercase tracking-[0.3em]">Gestión de Base de Datos Federada</p>
+              <h1 className="text-4xl font-black oswald uppercase text-white italic tracking-tighter">
+                {editId ? 'Editar Piloto Federado' : 'Nuevo Registro de Piloto'}
+              </h1>
+              <p className="text-zinc-500 text-[10px] font-black uppercase tracking-[0.3em]">Gestión de Base de Datos KDO</p>
             </div>
           </div>
         </header>
 
         <form onSubmit={handleSubmit} className="space-y-8">
-          {/* SECCIÓN DATOS PERSONALES */}
           <section className="bg-zinc-900 border border-zinc-800 rounded-[2.5rem] p-10 shadow-2xl">
             <h3 className="text-sm font-black uppercase text-yellow-400 tracking-[0.2em] mb-8 flex items-center gap-2">
               <IdCard size={18} /> Identidad y Categoría
@@ -172,7 +205,6 @@ const AdminNewPilot: React.FC = () => {
             </div>
           </section>
 
-          {/* SECCIÓN TÉCNICA */}
           <section className="bg-zinc-900 border border-zinc-800 rounded-[2.5rem] p-10 shadow-2xl">
             <h3 className="text-sm font-black uppercase text-yellow-400 tracking-[0.2em] mb-8 flex items-center gap-2">
               <Hash size={18} /> Datos Técnicos y Dorsal
@@ -222,7 +254,6 @@ const AdminNewPilot: React.FC = () => {
             </div>
           </section>
 
-          {/* SECCIÓN LICENCIAS */}
           <section className="bg-zinc-900 border border-zinc-800 rounded-[2.5rem] p-10 shadow-2xl">
             <h3 className="text-sm font-black uppercase text-yellow-400 tracking-[0.2em] mb-8 flex items-center gap-2">
               <ShieldCheck size={18} /> Licencias y Fiscalización
@@ -252,18 +283,6 @@ const AdminNewPilot: React.FC = () => {
                 />
                 {errors.sportsLicense && <p className="text-[9px] text-red-500 font-black uppercase flex items-center gap-1 mt-1"><AlertCircle size={10} /> {errors.sportsLicense}</p>}
               </div>
-
-              <div className="space-y-2">
-                <label className="text-[9px] font-black text-zinc-500 uppercase tracking-widest ml-1">Estado del Registro</label>
-                <select 
-                  value={formData.status}
-                  onChange={e => setFormData({...formData, status: e.target.value as Status})}
-                  className="w-full bg-black border border-zinc-800 rounded-xl px-6 py-4 text-white font-bold uppercase outline-none cursor-pointer focus:border-yellow-400"
-                >
-                  <option value={Status.CONFIRMADO}>Confirmado</option>
-                  <option value={Status.PENDIENTE}>Pendiente</option>
-                </select>
-              </div>
             </div>
           </section>
 
@@ -283,16 +302,12 @@ const AdminNewPilot: React.FC = () => {
               {isSubmitting ? (
                 <>Procesando...</>
               ) : (
-                <><Save size={18} /> Guardar Piloto en KDO</>
+                <><Save size={18} /> {editId ? 'Guardar Cambios' : 'Guardar Piloto en KDO'}</>
               )}
             </button>
           </div>
         </form>
       </main>
-
-      <div className="fixed bottom-0 left-0 w-full bg-black border-t border-zinc-800 py-3 px-8 flex items-center justify-center gap-4 text-[8px] font-black text-zinc-700 uppercase tracking-[0.4em]">
-         <ShieldCheck size={12} className="text-emerald-500" /> Sistema de Seguridad de Datos KDO • Conexión Cifrada
-      </div>
     </div>
   );
 };

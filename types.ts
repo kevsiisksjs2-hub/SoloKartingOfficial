@@ -10,36 +10,16 @@ export enum TrackFlag {
   CUADROS = 'Cuadros'
 }
 
-export type UserRole = 'SuperAdmin' | 'Comisario' | 'Técnico' | 'Cronometrista';
+export type UserRole = 'SuperAdmin' | 'Comisario Deportivo' | 'Escrutador Técnico' | 'Secretario' | 'Prensa';
 
 export interface AdminUser {
   id: string;
   username: string;
   password?: string;
   role: UserRole;
+  name: string;
   lastLogin?: number;
-  name: string;
-}
-
-export type PenaltyType = 'Apercibimiento' | 'Recargo' | 'Exclusión' | 'Suspensión';
-export type TechStatus = 'Aprobado' | 'Observado' | 'Rechazado' | 'Pendiente';
-
-export interface LapRecord {
-  lap: number;
-  time: string;
-  s1?: string;
-  s2?: string;
-  s3?: string;
-  isPersonalBest?: boolean;
-}
-
-export interface RaceEvent {
-  id: string;
-  round: number;
-  name: string;
-  date: string;
-  track: string;
-  status: 'Finalizada' | 'Próxima' | 'Programada';
+  permissions: string[];
 }
 
 export interface Championship {
@@ -49,86 +29,22 @@ export interface Championship {
   dates: string;
   tracks: string;
   image: string;
-  year?: number;
-  events?: RaceEvent[];
-  champions?: { category: string; pilot: string }[];
+  year: number;
+  events?: ChampionshipEvent[];
+  champions?: { category: string; pilot: string; kart: string }[];
 }
 
-export interface TechCheck {
+export interface ChampionshipEvent {
   id: string;
-  pilotId: string;
-  race: string;
-  weight: number;
-  engineSeal: string;
-  chassisSeal: string;
-  tireSerials: string[];
-  fuelSample: boolean;
-  tiresOk: boolean;
-  status: TechStatus;
-  comments: string;
-}
-
-export interface Protest {
-  id: string;
-  timestamp: number;
-  fromPilotId: string;
-  againstPilotId: string;
-  reason: string;
-  status: 'Recibida' | 'Resuelta';
-  resolution?: string;
-}
-
-export interface Penalty {
-  id: string;
-  pilotId: string;
-  race: string;
-  type: PenaltyType;
-  description: string;
-  pointsDeducted: number;
-  timePenalty?: number; 
-  date: string;
-  stewardName: string;
-}
-
-export interface TimingRow {
-  pos: number;
-  no: string;
+  round: number;
   name: string;
-  laps: number;
-  lastLap: string;
-  bestLap: string;
-  s1: string; 
-  s2: string; 
-  s3: string; 
-  gap: string;
-  interval: string;
-  status: 'PITS' | 'TRACK' | 'OUT';
-  isSessionBest: boolean;
-  isPersonalBest: boolean;
-  isS1Best?: boolean;
-  isS2Best?: boolean;
-  isS3Best?: boolean;
-  predictive?: string;
-  delta?: 'up' | 'down' | 'steady';
-  transponderSignal?: 'Good' | 'Fair' | 'Poor';
-}
-
-export interface RaceResult {
-  id: string;
-  category: string;
-  track: string;
-  sessionName: string;
   date: string;
-  stewardsVerdict?: string;
-  data: {
-    pos: number;
-    number: string;
-    name: string;
-    gap: string;
-    bestLap: string;
-    penalties?: string;
-    lapsHistory?: LapRecord[];
-  }[];
+  startDate?: string;
+  endDate?: string;
+  track: string;
+  status: 'Programada' | 'En curso' | 'Finalizada' | 'Suspendida' | 'Próxima';
+  briefingSigned?: string[];
+  technicalScrutiny?: Record<string, boolean>;
 }
 
 export interface Pilot {
@@ -138,28 +54,23 @@ export interface Pilot {
   category: Category;
   status: Status;
   ranking: number;
+  association?: string;
   medicalLicense: string;
   sportsLicense: string;
   transponderId: string;
-  conductPoints: number;
+  conductPoints: number; 
   lastUpdated: string;
   createdAt: number;
-  association?: string;
-  emergencyContact?: string;
-  bloodType?: string;
-  stats: { wins: number; podiums: number; poles: number; points?: number; fastLaps?: number };
+  stats: { wins: number; podiums: number; poles: number; points?: number };
 }
 
 export interface SystemSettings {
   paddockTicker: string;
   maintenanceMode: boolean;
   registrationsOpen: boolean;
-  weatherInfo: string;
-  briefingUrl?: string;
-  raceDirectorMode?: boolean;
-  minWeightPerCategory: Record<string, number>;
   liveTimingUrl: string;
-  resultsExternalUrl: string;
+  useLocalOrbits?: boolean;
+  orbitsIp?: string;
 }
 
 export interface AuditLog {
@@ -168,6 +79,74 @@ export interface AuditLog {
   admin: string;
   action: string;
   details: string;
+}
+
+export type RegulationCategory = 'Técnico' | 'Deportivo' | 'Calendario' | 'Anexo' | 'Circular';
+
+export interface Regulation {
+  id: string;
+  title: string;
+  description: string;
+  category: RegulationCategory;
+  version: string;
+  date: string;
+  fileSize: string;
+  fileData: string;
+  isDraft: boolean;
+}
+
+export interface LapTime {
+  lap: number;
+  time: string;
+  isBest?: boolean;
+}
+
+export interface RaceResultDetail {
+  pos: number;
+  no: string;
+  pilotName: string;
+  laps: number;
+  totalTime: string;
+  gap: string;
+  interval: string;
+  bestLap: string;
+  bestLapNo: number;
+  lapTimes: LapTime[];
+}
+
+export interface RaceResult {
+  id: string;
+  eventId: string;
+  sessionName: string;
+  category: string;
+  date: string;
+  results: RaceResultDetail[];
+}
+
+export interface PressRelease {
+  id: string;
+  title: string;
+  content: string;
+  date: string;
+  author: string;
+  category: 'Oficial' | 'Prensa' | 'Urgente';
+}
+
+export interface Penalty {
+  id: string;
+  pilotId: string;
+  pilotName: string;
+  category: string;
+  reason: string;
+  sanction: string;
+  date: string;
+}
+
+export interface Association {
+  id: string;
+  name: string;
+  description: string;
+  circuitIds: string[];
 }
 
 export interface Circuit {
@@ -183,13 +162,30 @@ export interface Circuit {
   records: any[];
 }
 
-export interface Association {
-  id: string;
+export interface TimingRow {
+  pos: number;
+  no: string;
   name: string;
-  description: string;
-  circuitIds: string[];
+  laps: number;
+  lastLap: string;
+  bestLap: string;
+  s1: string;
+  s2: string;
+  s3: string;
+  gap: string;
+  interval: string;
+  status: 'TRACK' | 'PITS';
+  isSessionBest?: boolean;
+  isPersonalBest?: boolean;
+  isS1Best?: boolean;
+  isS2Best?: boolean;
+  isS3Best?: boolean;
+  predictive?: string;
+  delta?: 'up' | 'down' | 'steady';
+  transponderSignal?: string;
 }
 
+// Added MarketplaceItem interface to fix missing export errors
 export interface MarketplaceItem {
   id: string;
   title: string;
@@ -198,18 +194,4 @@ export interface MarketplaceItem {
   condition: 'Nuevo' | 'Usado';
   image: string;
   contact: string;
-}
-
-export type RegulationCategory = 'Técnico' | 'Deportivo' | 'Calendario' | 'Anexo';
-
-export interface Regulation {
-  id: string;
-  title: string;
-  description: string;
-  category: RegulationCategory;
-  version: string;
-  date: string;
-  fileSize: string;
-  fileData: string;
-  isDraft: boolean;
 }

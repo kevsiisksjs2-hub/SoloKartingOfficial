@@ -1,192 +1,187 @@
 
 import React, { useEffect, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 import { storageService } from '../services/storageService';
+import { aiService } from '../services/aiService';
 import { Pilot, Status } from '../types';
-import { Search, Trophy, ShieldAlert, Award, Star, X, Filter, Users, FileDown, Clock } from 'lucide-react';
+import { Search, Trophy, ShieldAlert, Award, X, FileDown, Clock, Sparkles, Activity, Star, Calendar } from 'lucide-react';
 import { generatePilotsPDF } from '../utils/pdfGenerator';
 
 const Pilotos: React.FC = () => {
-  const [searchParams, setSearchParams] = useSearchParams();
+  const location = useLocation();
   const [pilots, setPilots] = useState<Pilot[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedPilot, setSelectedPilot] = useState<Pilot | null>(null);
-  const [categoryFilter, setCategoryFilter] = useState(searchParams.get('category') || 'Todas');
+  const [categoryFilter, setCategoryFilter] = useState('Todas');
+  const [aiBio, setAiBio] = useState<string | null>(null);
+  const [loadingBio, setLoadingBio] = useState(false);
 
   useEffect(() => {
     setPilots(storageService.getPilots());
-  }, []);
+    
+    // Leer parámetro de categoría de la URL
+    const params = new URLSearchParams(location.search);
+    const catParam = params.get('category');
+    if (catParam) {
+      setCategoryFilter(catParam);
+    }
+  }, [location.search]);
+
+  useEffect(() => {
+    if (selectedPilot) {
+      const fetchBio = async () => {
+        setAiBio(null);
+        setLoadingBio(true);
+        try {
+          const bio = await aiService.getPilotProfileBio(selectedPilot);
+          setAiBio(bio);
+        } catch (e) {
+          setAiBio("Perfil oficial KDO encriptado o no disponible.");
+        } finally {
+          setLoadingBio(false);
+        }
+      };
+      fetchBio();
+    }
+  }, [selectedPilot]);
 
   const categories = ['Todas', ...storageService.getCategories()];
 
-  // Filter and Sort by Arrival Order (createdAt)
-  const filteredPilots = pilots
-    .filter(p => {
-      const matchesSearch = p.name.toLowerCase().includes(searchTerm.toLowerCase()) || p.number.includes(searchTerm);
-      const matchesCategory = categoryFilter === 'Todas' || p.category === categoryFilter;
-      return p.status !== Status.BAJA && matchesSearch && matchesCategory;
-    })
-    .sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
-
-  const handleCategoryChange = (cat: string) => {
-    setCategoryFilter(cat);
-    if (cat === 'Todas') {
-      searchParams.delete('category');
-    } else {
-      searchParams.set('category', cat);
-    }
-    setSearchParams(searchParams);
-  };
-
-  const handleDownloadPDF = () => {
-    const title = categoryFilter === 'Todas' ? 'LISTADO GENERAL DE INSCRIPTOS' : `INSCRIPTOS - ${categoryFilter}`;
-    generatePilotsPDF(filteredPilots, title, categoryFilter === 'Todas' ? undefined : categoryFilter);
-  };
+  const filteredPilots = pilots.filter(p => {
+    const matchSearch = p.name.toLowerCase().includes(searchTerm.toLowerCase()) || p.number.includes(searchTerm);
+    const matchCat = categoryFilter === 'Todas' || p.category === categoryFilter;
+    return matchSearch && matchCat && p.status !== Status.BAJA;
+  });
 
   return (
-    <div className="bg-black py-12 min-h-screen">
+    <div className="bg-black py-16 min-h-screen">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-10 mb-16 border-b border-zinc-900 pb-12">
+        
+        <header className="flex flex-col lg:flex-row justify-between items-end gap-10 mb-20 border-b border-white/5 pb-16">
           <div>
-            <h1 className="text-6xl font-black italic oswald uppercase text-white mb-2 tracking-tighter">Padrón <span className="text-yellow-400">Pilotos</span></h1>
-            <p className="text-zinc-500 text-[10px] font-black uppercase tracking-[0.4em] mb-4">Orden de llegada y palmarés oficial KDO</p>
+            <h1 className="text-7xl font-black italic oswald uppercase text-white mb-2 tracking-tighter">Padrón <span className="text-yellow-400">Oficial</span></h1>
+            <p className="text-zinc-500 text-[10px] font-black uppercase tracking-[0.5em]">KDO - Registro de Competidores Season 2026</p>
           </div>
           
-          <div className="flex flex-col sm:flex-row gap-4 w-full lg:w-auto">
+          <div className="flex flex-wrap gap-4 w-full lg:w-auto">
             <div className="relative flex-grow sm:w-80">
-              <Search className="absolute left-4 top-4 text-zinc-600" size={20} />
+              <Search className="absolute left-6 top-5 text-zinc-700" size={20} />
               <input 
                 type="text" 
-                placeholder="BUSCAR PILOTO O DORSAL..."
+                placeholder="BUSCAR POR NOMBRE O DORSAL..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full bg-zinc-900 border border-zinc-800 rounded-2xl py-4 pl-12 pr-4 text-white font-bold focus:border-yellow-400 outline-none transition-all uppercase text-xs"
+                className="w-full bg-zinc-900 border border-zinc-800 rounded-2xl py-5 pl-16 pr-6 text-white font-bold focus:border-yellow-400 outline-none transition-all uppercase text-xs"
               />
             </div>
             
-            <div className="relative sm:w-64">
-              <Filter className="absolute left-4 top-4 text-zinc-600" size={18} />
-              <select 
-                value={categoryFilter}
-                onChange={(e) => handleCategoryChange(e.target.value)}
-                className="w-full bg-zinc-900 border border-zinc-800 rounded-2xl py-4 pl-12 pr-6 text-white font-bold focus:border-yellow-400 outline-none appearance-none uppercase text-xs cursor-pointer"
-              >
-                {categories.map(c => <option key={c} value={c}>{c}</option>)}
-              </select>
-            </div>
-
-            <button 
-              onClick={handleDownloadPDF}
-              className="bg-yellow-400 text-black hover:bg-yellow-500 px-8 py-4 rounded-2xl font-black uppercase text-[10px] tracking-widest transition-all flex items-center justify-center gap-2 shadow-2xl"
-              title="Descargar Planilla Oficial"
+            <select 
+              value={categoryFilter}
+              onChange={(e) => setCategoryFilter(e.target.value)}
+              className="bg-zinc-900 border border-zinc-800 rounded-2xl py-5 px-10 text-white font-black uppercase text-xs focus:border-yellow-400 outline-none"
             >
-              <FileDown size={18} />
-              <span>DESCARGAR LISTA</span>
+              {categories.map(c => <option key={c} value={c}>{c}</option>)}
+            </select>
+
+            <button onClick={() => generatePilotsPDF(filteredPilots, "PADRÓN OFICIAL KDO 2026")} className="bg-white text-black px-10 py-5 rounded-2xl font-black uppercase text-xs hover:bg-yellow-400 transition-all flex items-center gap-3">
+              <FileDown size={18} /> Exportar Padrón
             </button>
           </div>
-        </div>
+        </header>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-          {filteredPilots.map((p, index) => (
+          {filteredPilots.map((p) => (
             <div 
               key={p.id} 
               onClick={() => setSelectedPilot(p)}
-              className="bg-zinc-900 border border-zinc-800 rounded-[2.5rem] p-8 hover:border-yellow-400 transition-all group cursor-pointer shadow-2xl relative overflow-hidden flex flex-col h-full"
+              className="glass-panel p-8 rounded-[3rem] hover:border-yellow-400 transition-all group cursor-pointer relative overflow-hidden flex flex-col h-full"
             >
-              {/* Badge Orden de Llegada */}
-              <div className="absolute top-0 left-0 bg-black border-br border-zinc-800 px-4 py-2 text-[10px] font-black oswald italic text-yellow-400 rounded-br-2xl z-20 group-hover:bg-yellow-400 group-hover:text-black transition-colors">
-                INSCRIPCIÓN #{index + 1}
-              </div>
-
-              <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-15 transition-all duration-500">
-                <Trophy size={100} />
-              </div>
-
-              <div className="flex justify-between items-start mb-8 mt-4 relative z-10">
-                <div className="bg-yellow-400 text-black font-black italic oswald text-4xl px-5 py-2.5 rounded-2xl shadow-xl transform -skew-x-12 group-hover:scale-110 transition-transform">
+              <div className="flex justify-between items-start mb-10">
+                <div className="bg-yellow-400 text-black font-black italic oswald text-4xl px-4 py-2 rounded-2xl shadow-xl transform -skew-x-12">
                   #{p.number}
                 </div>
-                <div className={`p-3 rounded-2xl border ${p.conductPoints && p.conductPoints > 7 ? 'text-emerald-500 border-emerald-500/20 bg-emerald-500/5' : 'text-yellow-400 border-yellow-400/20 bg-yellow-400/5'}`}>
-                  <ShieldAlert size={20} />
+                <div className={`px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-widest ${p.conductPoints > 7 ? 'bg-emerald-500/10 text-emerald-500' : 'bg-red-500/10 text-red-500'}`}>
+                  Licencia: {p.conductPoints}/10
                 </div>
               </div>
 
-              <div className="relative z-10 flex-grow">
-                <h3 className="text-2xl font-black text-white uppercase oswald leading-none mb-2 group-hover:text-yellow-400 transition-colors tracking-tight italic">{p.name}</h3>
-                <div className="flex items-center gap-2 mb-8">
-                  <span className="text-zinc-600 text-[9px] font-black uppercase tracking-[0.2em]">{p.category}</span>
-                </div>
-              </div>
+              <h3 className="text-2xl font-black text-white uppercase oswald italic leading-none mb-1 group-hover:text-yellow-400 transition-colors">{p.name}</h3>
+              <p className="text-zinc-600 text-[9px] font-black uppercase tracking-[0.3em] mb-8">{p.category}</p>
               
-              <div className="relative z-10 pt-6 border-t border-zinc-800 grid grid-cols-2 gap-4">
-                 <div className="text-center">
-                    <p className="text-[8px] font-black text-zinc-600 uppercase tracking-widest mb-1">Victorias</p>
-                    <p className="text-2xl font-black text-white oswald italic">{p.stats?.wins || 0}</p>
+              <div className="mt-auto grid grid-cols-2 gap-4 pt-6 border-t border-white/5">
+                 <div className="flex items-center gap-2">
+                    <Trophy size={12} className="text-yellow-400" />
+                    <span className="text-[10px] font-black text-white oswald">{p.stats.wins} <span className="text-zinc-600 text-[8px] font-bold">WINS</span></span>
                  </div>
-                 <div className="text-center border-l border-zinc-800">
-                    <p className="text-[8px] font-black text-zinc-600 uppercase tracking-widest mb-1">Podios</p>
-                    <p className="text-2xl font-black text-white oswald italic">{p.stats?.podiums || 0}</p>
+                 <div className="flex items-center gap-2 justify-end">
+                    <Award size={12} className="text-blue-400" />
+                    <span className="text-[10px] font-black text-white oswald">{p.stats.podiums} <span className="text-zinc-600 text-[8px] font-bold">PODS</span></span>
                  </div>
               </div>
             </div>
           ))}
-          
           {filteredPilots.length === 0 && (
-            <div className="col-span-full py-32 text-center bg-zinc-900/30 border-2 border-dashed border-zinc-900 rounded-[3rem]">
-               <Users size={64} className="text-zinc-800 mx-auto mb-6 opacity-20" />
-               <p className="text-zinc-600 font-black uppercase tracking-widest text-xs">No se encontraron pilotos con los filtros seleccionados</p>
+            <div className="col-span-full py-40 text-center glass-panel rounded-[3rem]">
+               <Search size={48} className="text-zinc-800 mx-auto mb-4 opacity-20" />
+               <p className="text-zinc-600 font-black uppercase tracking-widest text-[10px]">No se encontraron pilotos con los filtros aplicados</p>
             </div>
           )}
         </div>
 
         {selectedPilot && (
-          <div className="fixed inset-0 z-[150] flex items-center justify-center p-6 bg-black/98 backdrop-blur-2xl">
-             <div className="bg-zinc-900 w-full max-w-2xl rounded-[3rem] border border-zinc-800 p-12 shadow-2xl relative overflow-hidden animate-in zoom-in-95 duration-300">
-                <button onClick={() => setSelectedPilot(null)} className="absolute top-10 right-10 text-zinc-500 hover:text-white transition-colors bg-black p-2 rounded-full"><X size={24}/></button>
+          <div className="fixed inset-0 z-[150] flex items-center justify-center p-6 bg-black/95 backdrop-blur-3xl animate-in fade-in">
+             <div className="bg-zinc-900 w-full max-w-4xl rounded-[4rem] border border-white/5 p-12 shadow-2xl relative overflow-hidden animate-in zoom-in-95">
+                <button onClick={() => setSelectedPilot(null)} className="absolute top-10 right-10 text-zinc-700 hover:text-white bg-black p-3 rounded-full"><X size={24}/></button>
                 
-                <div className="flex items-center gap-10 mb-12">
-                   <div className="bg-yellow-400 w-36 h-36 rounded-[2.5rem] flex items-center justify-center text-7xl font-black italic oswald text-black shadow-2xl transform rotate-3 relative overflow-hidden">
-                     <span className="relative z-10">#{selectedPilot.number}</span>
-                     <div className="absolute inset-0 bg-white/10 -rotate-45 translate-y-1/2"></div>
-                   </div>
-                   <div>
-                      <h2 className="text-5xl md:text-6xl font-black oswald uppercase text-white leading-none mb-3 tracking-tighter italic">{selectedPilot.name}</h2>
-                      <div className="flex flex-col gap-2">
-                        <span className="bg-zinc-800 text-yellow-400 font-black uppercase tracking-[0.3em] text-[10px] px-3 py-1.5 rounded-xl border border-yellow-400/20 w-fit">{selectedPilot.category}</span>
-                        {selectedPilot.createdAt && (
-                          <div className="flex items-center gap-2 text-zinc-600 text-[9px] font-bold uppercase tracking-widest">
-                            <Clock size={12} className="text-yellow-400" />
-                            Registrado el {new Date(selectedPilot.createdAt).toLocaleDateString()} a las {new Date(selectedPilot.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
-                          </div>
-                        )}
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
+                   <div className="lg:col-span-1 space-y-8">
+                      <div className="bg-yellow-400 aspect-square rounded-[3rem] flex items-center justify-center text-[120px] font-black italic oswald text-black shadow-2xl transform rotate-3">
+                         #{selectedPilot.number}
+                      </div>
+                      <div className="bg-black/40 border border-white/5 p-8 rounded-3xl text-center">
+                         <p className="text-[10px] font-black text-zinc-500 uppercase tracking-[0.3em] mb-2">Conducta Deportiva</p>
+                         <div className="text-5xl font-black oswald italic text-white">{selectedPilot.conductPoints} <span className="text-zinc-700">/ 10</span></div>
+                         <p className="text-[8px] text-zinc-600 font-bold uppercase mt-4">Sistema de puntos federados FRAD</p>
                       </div>
                    </div>
-                </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
-                   <div className="bg-black p-8 rounded-[2rem] border border-zinc-800 text-center group hover:border-yellow-400 transition-all">
-                      <Star className="text-yellow-400 mx-auto mb-4 group-hover:scale-110 transition-transform" size={32} />
-                      <p className="text-[10px] font-black text-zinc-500 uppercase tracking-widest mb-1">Puntos Conducta</p>
-                      <p className="text-4xl font-black oswald text-white">{selectedPilot.conductPoints || 10}/10</p>
-                   </div>
-                   <div className="bg-black p-8 rounded-[2rem] border border-zinc-800 text-center group hover:border-yellow-400 transition-all">
-                      <Award className="text-emerald-500 mx-auto mb-4 group-hover:scale-110 transition-transform" size={32} />
-                      <p className="text-[10px] font-black text-zinc-500 uppercase tracking-widest mb-1">Victorias</p>
-                      <p className="text-4xl font-black oswald text-white">{selectedPilot.stats?.wins || 0}</p>
-                   </div>
-                   <div className="bg-black p-8 rounded-[2rem] border border-zinc-800 text-center group hover:border-yellow-400 transition-all">
-                      <Trophy className="text-zinc-600 mx-auto mb-4 group-hover:scale-110 transition-transform" size={32} />
-                      <p className="text-[10px] font-black text-zinc-500 uppercase tracking-widest mb-1">Podios Totales</p>
-                      <p className="text-4xl font-black oswald text-white">{selectedPilot.stats?.podiums || 0}</p>
-                   </div>
-                </div>
+                   <div className="lg:col-span-2 space-y-10">
+                      <div>
+                        <h2 className="text-6xl font-black oswald uppercase text-white mb-2 italic tracking-tighter leading-none">{selectedPilot.name}</h2>
+                        <div className="flex gap-3">
+                          <span className="bg-zinc-800 text-yellow-400 font-black uppercase text-[10px] px-5 py-2 rounded-xl border border-yellow-400/20">{selectedPilot.category}</span>
+                          <span className="bg-emerald-500 text-black font-black uppercase text-[10px] px-5 py-2 rounded-xl">PILOTO CONFIRMADO</span>
+                        </div>
+                      </div>
 
-                <div className="bg-zinc-800/20 p-8 rounded-[2.5rem] border border-white/5 relative overflow-hidden">
-                   <div className="absolute top-0 right-0 w-32 h-32 bg-yellow-400/5 blur-3xl rounded-full"></div>
-                   <h4 className="text-white font-black oswald uppercase tracking-widest flex items-center gap-3 mb-4 relative z-10">
-                     <ShieldAlert className="text-yellow-400" /> Historial de Comisariato
-                   </h4>
-                   <p className="text-zinc-500 text-[10px] font-bold uppercase tracking-widest italic relative z-10">Sin sanciones graves reportadas en la presente temporada.</p>
+                      <div className="p-8 bg-black/40 border border-white/5 rounded-[2.5rem] relative">
+                        <Sparkles size={18} className="text-yellow-400 absolute -top-2 -right-2" />
+                        <h4 className="text-[9px] font-black text-zinc-600 uppercase tracking-widest mb-4">Legacy Profile Bio (AI)</h4>
+                        {loadingBio ? (
+                          <div className="flex items-center gap-3 text-zinc-500 font-black uppercase text-[10px]"><Activity size={14} className="animate-spin" /> Procesando Historial...</div>
+                        ) : (
+                          <p className="text-white text-sm font-medium italic leading-relaxed">"{aiBio}"</p>
+                        )}
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                         <div className="bg-zinc-950 p-8 rounded-3xl border border-white/5">
+                            <h4 className="text-[10px] font-black text-zinc-500 uppercase mb-6 flex items-center gap-2"><Star size={12} className="text-yellow-400" /> Career Milestones</h4>
+                            <div className="space-y-4">
+                               <div className="flex justify-between items-center"><span className="text-xs text-zinc-400">Wins Totales</span> <span className="text-lg font-black text-white oswald">{selectedPilot.stats.wins}</span></div>
+                               <div className="flex justify-between items-center"><span className="text-xs text-zinc-400">Poles KDO</span> <span className="text-lg font-black text-white oswald">{selectedPilot.stats.poles}</span></div>
+                               <div className="flex justify-between items-center"><span className="text-xs text-zinc-400">Points Standing</span> <span className="text-lg font-black text-emerald-500 oswald">{(selectedPilot.stats.points || 0).toFixed(1)}</span></div>
+                            </div>
+                         </div>
+                         <div className="bg-zinc-950 p-8 rounded-3xl border border-white/5">
+                            <h4 className="text-[10px] font-black text-zinc-500 uppercase mb-6 flex items-center gap-2"><Calendar size={12} className="text-blue-400" /> Data Institucional</h4>
+                            <div className="space-y-4">
+                               <div className="flex flex-col"><span className="text-[8px] text-zinc-600 font-black uppercase">Médica</span> <span className="text-xs font-bold text-white uppercase">{selectedPilot.medicalLicense}</span></div>
+                               <div className="flex flex-col"><span className="text-[8px] text-zinc-600 font-black uppercase">Deportiva</span> <span className="text-xs font-bold text-white uppercase">{selectedPilot.sportsLicense}</span></div>
+                            </div>
+                         </div>
+                      </div>
+                   </div>
                 </div>
              </div>
           </div>

@@ -1,118 +1,115 @@
 
 import React, { useEffect, useState } from 'react';
-import { MapPin, Info, Ruler, Zap, Building2, Target } from 'lucide-react';
+import { MapPin, Ruler, Zap, Sparkles, CloudRain, Sun, Activity, Phone, Bed, Utensils, ShieldAlert } from 'lucide-react';
 import { storageService } from '../services/storageService';
-import { Circuit, Association } from '../types';
+import { aiService } from '../services/aiService';
+import { Circuit } from '../types';
 
 const Circuitos: React.FC = () => {
   const [circuits, setCircuits] = useState<Circuit[]>([]);
-  const [associations, setAssociations] = useState<Association[]>([]);
+  const [aiAdvice, setAiAdvice] = useState<Record<string, string>>({});
+  const [loadingAdvice, setLoadingAdvice] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     setCircuits(storageService.getCircuits());
-    setAssociations(storageService.getAssociations());
   }, []);
 
-  const getAssocsForCircuit = (circuitId: string) => {
-    return associations.filter(a => a.circuitIds?.includes(circuitId));
+  const fetchAdvice = async (c: Circuit) => {
+    setLoadingAdvice(prev => ({ ...prev, [c.id]: true }));
+    const advice = await aiService.analyzeCircuitTips(c.name, c.surfaceStatus || 'Normal');
+    setAiAdvice(prev => ({ ...prev, [c.id]: advice }));
+    setLoadingAdvice(prev => ({ ...prev, [c.id]: false }));
   };
 
   return (
-    <div className="bg-zinc-950 py-12 min-h-screen">
+    <div className="bg-black py-20 min-h-screen">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="mb-16">
-          <h1 className="text-5xl font-black italic oswald uppercase text-white mb-4 tracking-tighter">
-            Nuestros <span className="text-red-600">Kartódromos</span>
-          </h1>
-          <div className="w-24 h-2 bg-red-600 mb-6"></div>
-          <p className="text-zinc-400 text-lg max-w-3xl leading-relaxed">
-            Explora los circuitos de tierra más emblemáticos de la provincia. Escenarios donde la técnica de manejo y la pasión por el karting se encuentran en cada curva.
-          </p>
-        </div>
+        
+        <header className="mb-24">
+          <h1 className="text-8xl font-black italic oswald uppercase text-white mb-6 tracking-tighter leading-none">Mapa <span className="text-yellow-400">Trazados</span></h1>
+          <p className="text-zinc-500 font-bold uppercase text-[10px] tracking-[0.6em]">Escenarios Oficiales de Competición Temporada 2026</p>
+        </header>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
-          {circuits.map((c, i) => {
-            const circuitAssocs = getAssocsForCircuit(c.id);
-            return (
-              <div key={c.id} className="bg-zinc-900 rounded-3xl overflow-hidden border border-zinc-800 group hover:border-red-600/40 transition-all duration-500 shadow-2xl flex flex-col h-full">
-                <div className="h-80 overflow-hidden relative shrink-0">
-                  <img 
-                    src={c.image} 
-                    alt={c.name} 
-                    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110 opacity-80 group-hover:opacity-100 grayscale group-hover:grayscale-0" 
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-zinc-900 via-transparent to-transparent"></div>
-                  <div className="absolute top-6 left-6 bg-red-600 text-white font-black px-4 py-2 rounded-lg text-sm oswald flex items-center gap-2 shadow-lg z-10">
-                    <Ruler size={16} />
+        <div className="grid grid-cols-1 gap-24">
+          {circuits.map((c) => (
+            <div key={c.id} className="grid grid-cols-1 lg:grid-cols-12 gap-16 group">
+              
+              {/* VISUAL & DATA */}
+              <div className="lg:col-span-5 space-y-10">
+                <div className="aspect-[4/5] overflow-hidden rounded-[4rem] border border-white/5 relative shadow-[0_0_100px_rgba(0,0,0,0.5)]">
+                  <img src={c.image} alt={c.name} className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110 opacity-70" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent"></div>
+                  <div className="absolute top-10 left-10 bg-yellow-400 text-black font-black px-6 py-3 rounded-2xl oswald text-xl shadow-2xl transform -rotate-2">
                     {c.length}
                   </div>
+                  <div className="absolute bottom-10 left-10 right-10">
+                    <h3 className="text-5xl font-black text-white uppercase oswald italic tracking-tighter mb-4">{c.name}</h3>
+                    <div className="flex items-center gap-3 text-zinc-400 text-[10px] font-black uppercase tracking-widest">
+                       <MapPin size={14} className="text-yellow-400" /> {c.location}
+                    </div>
+                  </div>
                 </div>
-                
-                <div className="p-8 flex flex-col flex-grow">
-                  <div className="flex items-start justify-between mb-6">
-                    <div>
-                      <div className="flex items-center gap-2 mb-2">
-                        <div className="w-2 h-2 rounded-full bg-red-600 animate-pulse"></div>
-                        <span className="text-zinc-500 text-[10px] font-black uppercase tracking-widest">Circuito de Competencia</span>
-                      </div>
-                      <h3 className="text-3xl font-black text-white mb-2 uppercase tracking-tight oswald group-hover:text-red-500 transition-colors">{c.name}</h3>
-                      <div className="flex items-center gap-2 text-zinc-400 text-sm font-bold uppercase">
-                        <MapPin size={16} className="text-red-600" />
-                        {c.location}
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <p className="text-zinc-500 text-sm mb-8 leading-relaxed italic flex-grow">
-                    "{c.description}"
-                  </p>
 
-                  <div className="flex flex-wrap gap-3 mb-8">
-                    {c.features.map((f, idx) => (
-                      <span key={idx} className="bg-zinc-800 text-zinc-300 text-[10px] font-black uppercase px-3 py-1.5 rounded-full border border-zinc-700 flex items-center gap-1.5">
-                        <Zap size={10} className="text-red-600" />
-                        {f}
-                      </span>
-                    ))}
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="bg-zinc-900/50 p-8 rounded-3xl border border-white/5">
+                    <Sun className="text-yellow-400 mb-4" size={24} />
+                    <p className="text-[8px] font-black text-zinc-600 uppercase mb-1">Superficie</p>
+                    <p className="text-sm font-black text-white uppercase">{c.surfaceStatus || 'Tierra Compacta'}</p>
                   </div>
-
-                  {/* Asociaciones Federadas vinculadas */}
-                  {circuitAssocs.length > 0 && (
-                    <div className="mb-8 pt-6 border-t border-zinc-800/50">
-                      <p className="text-[10px] font-black uppercase tracking-widest text-zinc-600 mb-3 flex items-center gap-2">
-                        <Building2 size={12} /> Entidades Fiscalizadoras
-                      </p>
-                      <div className="flex flex-wrap gap-2">
-                        {circuitAssocs.map(a => (
-                          <span key={a.id} className="px-3 py-1.5 bg-zinc-950 text-red-500 text-[9px] font-black uppercase rounded-lg border border-red-600/20 shadow-lg">
-                            {a.name}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                  
-                  <button className="w-full mt-auto py-4 bg-zinc-800 hover:bg-red-600 text-white font-black uppercase text-xs rounded-xl transition-all flex items-center justify-center gap-3 group/btn shadow-xl border border-zinc-700 hover:border-red-600">
-                    <Info size={18} />
-                    Ver Detalles Técnicos
-                  </button>
+                  <div className="bg-zinc-900/50 p-8 rounded-3xl border border-white/5">
+                    <ShieldAlert className="text-red-600 mb-4" size={24} />
+                    <p className="text-[8px] font-black text-zinc-600 uppercase mb-1">Emergencias</p>
+                    <p className="text-sm font-black text-white uppercase">{c.emergencyPhone || '107'}</p>
+                  </div>
                 </div>
               </div>
-            );
-          })}
-        </div>
 
-        <div className="mt-20 p-10 bg-gradient-to-br from-zinc-900 to-zinc-950 border border-zinc-800 rounded-3xl flex flex-col md:flex-row items-center gap-8 shadow-2xl relative overflow-hidden">
-          <div className="absolute top-0 right-0 p-4 opacity-5"><Target size={200} /></div>
-          <div className="bg-red-600/10 p-6 rounded-full border border-red-600/20 shadow-[0_0_20px_rgba(220,38,38,0.2)]">
-            <Zap size={48} className="text-red-600" />
-          </div>
-          <div className="relative z-10">
-            <h4 className="text-2xl font-black text-white uppercase oswald mb-2 tracking-tight">Competencia en Tierra</h4>
-            <p className="text-zinc-400 max-w-2xl leading-relaxed">
-              El karting sobre tierra requiere una preparación especial del chasis y una técnica de manejo única. Asegúrate de consultar el reglamento técnico sobre neumáticos y protecciones antes de cada fecha.
-            </p>
-          </div>
+              {/* PADDOCK GUIDE & IA */}
+              <div className="lg:col-span-7 flex flex-col justify-center space-y-12">
+                <div className="space-y-6">
+                  <h4 className="text-[10px] font-black text-zinc-500 uppercase tracking-[0.5em] flex items-center gap-3"><Zap size={14} className="text-yellow-400" /> Strategic Analysis</h4>
+                  <div className="bg-white/[0.02] border border-white/5 p-10 rounded-[3rem] relative">
+                    <Sparkles className="absolute top-8 right-8 text-yellow-400/20" size={32} />
+                    {aiAdvice[c.id] ? (
+                      <p className="text-zinc-300 text-lg font-medium italic leading-relaxed">"{aiAdvice[c.id]}"</p>
+                    ) : (
+                      <div className="flex flex-col items-center justify-center py-10">
+                        <button onClick={() => fetchAdvice(c)} disabled={loadingAdvice[c.id]} className="bg-yellow-400 text-black px-10 py-5 rounded-2xl font-black uppercase text-xs shadow-xl transition-all hover:bg-white active:scale-95">
+                          {loadingAdvice[c.id] ? <Activity className="animate-spin" /> : 'Sintonizar Pro-Tips IA'}
+                        </button>
+                        <p className="text-[8px] text-zinc-700 font-bold uppercase mt-6 tracking-widest">Requiere Credenciales KDO Activas</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="space-y-6">
+                  <h4 className="text-[10px] font-black text-zinc-500 uppercase tracking-[0.5em] flex items-center gap-3"><Bed size={14} className="text-blue-500" /> Paddock Services</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                     <div className="p-8 bg-zinc-900 border border-white/5 rounded-3xl group/service hover:border-blue-500 transition-all">
+                        <div className="flex items-center gap-4 mb-6">
+                           <Bed size={20} className="text-blue-500" />
+                           <span className="text-[10px] font-black text-white uppercase tracking-widest">Hospedajes Cercanos</span>
+                        </div>
+                        <p className="text-[10px] text-zinc-600 font-bold leading-relaxed group-hover/service:text-zinc-400 transition-colors">Convenios especiales para equipos KDO en hoteles locales con espacio para camiones.</p>
+                     </div>
+                     <div className="p-8 bg-zinc-900 border border-white/5 rounded-3xl group/service hover:border-emerald-500 transition-all">
+                        <div className="flex items-center gap-4 mb-6">
+                           <Utensils size={20} className="text-emerald-500" />
+                           <span className="text-[10px] font-black text-white uppercase tracking-widest">Catering Paddock</span>
+                        </div>
+                        <p className="text-[10px] text-zinc-600 font-bold leading-relaxed group-hover/service:text-zinc-400 transition-colors">Servicio de buffet habilitado desde técnica. Zonas de sombra y agua potable certificada.</p>
+                     </div>
+                  </div>
+                </div>
+
+                <button className="w-full py-6 bg-white text-black rounded-3xl font-black uppercase text-xs tracking-widest shadow-2xl transition-all hover:bg-red-600 hover:text-white flex items-center justify-center gap-4 group-hover:translate-y-[-10px]">
+                   <MapPin size={18} /> Obtener Hoja de Ruta GPS
+                </button>
+              </div>
+
+            </div>
+          ))}
         </div>
       </div>
     </div>

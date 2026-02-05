@@ -1,109 +1,124 @@
 
-import { Pilot, Category, TechCheck, Penalty, AuditLog, SystemSettings, TrackFlag, Protest, Championship, Circuit, Association, RaceResult, MarketplaceItem, Regulation, AdminUser } from '../types';
-import { INITIAL_PILOTS, INITIAL_CATEGORIES, INITIAL_CIRCUITS, INITIAL_CHAMPIONSHIPS, INITIAL_ASSOCIATIONS } from '../constants';
+import { Pilot, AuditLog, SystemSettings, TrackFlag, Championship, Regulation, AdminUser, PressRelease, Status, Circuit, MarketplaceItem, Penalty } from '../types';
+import { INITIAL_PILOTS, INITIAL_CATEGORIES, INITIAL_CHAMPIONSHIPS, INITIAL_CIRCUITS } from '../constants';
 
 const KEYS = {
-  PILOTS: 'kdo_p_v3',
-  TECH: 'kdo_tech_v3',
-  PENALTIES: 'kdo_penalties_v3',
-  PROTESTS: 'kdo_protests_v3',
-  SETTINGS: 'kdo_settings_v3',
-  LOGS: 'kdo_logs_v3',
-  TRACK_STATUS: 'kdo_flag_v3',
-  AUTH: 'kdo_auth_v3',
-  ADMIN_USERS: 'kdo_users_v3',
-  MARKETPLACE: 'kdo_market_v3',
-  REGULATIONS: 'kdo_regs_v3',
-  RESULTS: 'kdo_results_v3',
-  CHAMPIONSHIPS: 'kdo_champs_v3'
+  PILOTS: 'kdo_v10_pilots',
+  SETTINGS: 'kdo_v10_settings',
+  LOGS: 'kdo_v10_logs',
+  TRACK: 'kdo_v10_track',
+  AUTH: 'kdo_v10_auth',
+  ADMINS: 'kdo_v10_admins',
+  REGS: 'kdo_v10_regs',
+  CHAMPS: 'kdo_v10_champs',
+  NEWS: 'kdo_v10_news',
+  CIRCUITS: 'kdo_v10_circuits',
+  MARKET: 'kdo_v10_market',
+  PENALTIES: 'kdo_v10_penalties'
 };
 
-const INITIAL_ADMINS: AdminUser[] = [
-  { id: 'admin1', username: 'kdoadmin', password: 'kdo2026', role: 'SuperAdmin', name: 'Director KDO' }
+const defaultAdmins: AdminUser[] = [
+  {
+    id: 'admin-1',
+    username: 'admin',
+    password: 'admin123',
+    name: 'Director General KDO',
+    role: 'SuperAdmin',
+    permissions: ['READ', 'WRITE', 'ADMIN']
+  }
 ];
 
-const DEFAULT_SETTINGS: SystemSettings = {
-  paddockTicker: '⚠️ TODOS LOS PILOTOS A BRIEFING EN TORRE DE CONTROL • CLASE MASTER A PARQUE CERRADO ⚠️',
-  maintenanceMode: false,
-  registrationsOpen: true,
-  briefingUrl: '#',
-  raceDirectorMode: false,
-  weatherInfo: 'Soleado - 24°C',
-  minWeightPerCategory: {
-    'KDO Power': 165,
-    'Supermaster': 175,
-    'Máster': 170,
-    'Clase 3': 160
-  },
-  liveTimingUrl: 'https://speedhive.mylaps.com/LiveTiming',
-  resultsExternalUrl: '#'
-};
-
-export interface ExtendedSystemSettings extends SystemSettings {
-  orbitsIp?: string;
-  useLocalOrbits?: boolean;
-}
-
 export const storageService = {
-  getPilots: (): Pilot[] => JSON.parse(localStorage.getItem(KEYS.PILOTS) || JSON.stringify(INITIAL_PILOTS)),
-  savePilots: (p: Pilot[]) => localStorage.setItem(KEYS.PILOTS, JSON.stringify(p)),
-
-  getTechChecks: (): TechCheck[] => JSON.parse(localStorage.getItem(KEYS.TECH) || '[]'),
-  saveTechCheck: (c: TechCheck) => {
-    const all = storageService.getTechChecks();
-    localStorage.setItem(KEYS.TECH, JSON.stringify([c, ...all]));
+  getPilots: (): Pilot[] => {
+    const data = localStorage.getItem(KEYS.PILOTS);
+    return data ? JSON.parse(data) : INITIAL_PILOTS;
   },
+  savePilots: (pilots: Pilot[]) => localStorage.setItem(KEYS.PILOTS, JSON.stringify(pilots)),
 
-  getPenalties: (): Penalty[] => JSON.parse(localStorage.getItem(KEYS.PENALTIES) || '[]'),
-  savePenalty: (p: Penalty) => {
-    const all = storageService.getPenalties();
-    localStorage.setItem(KEYS.PENALTIES, JSON.stringify([p, ...all]));
+  getSettings: (): SystemSettings => {
+    const data = localStorage.getItem(KEYS.SETTINGS);
+    return data ? JSON.parse(data) : {
+      paddockTicker: "TEMPORADA 2026 - KDO OFICIAL",
+      maintenanceMode: false,
+      registrationsOpen: true,
+      liveTimingUrl: ""
+    };
   },
+  saveSettings: (settings: SystemSettings) => localStorage.setItem(KEYS.SETTINGS, JSON.stringify(settings)),
 
-  getProtests: (): Protest[] => JSON.parse(localStorage.getItem(KEYS.PROTESTS) || '[]'),
-  saveProtest: (p: Protest) => {
-    const all = storageService.getProtests();
-    localStorage.setItem(KEYS.PROTESTS, JSON.stringify([p, ...all]));
+  getAuditLogs: (): AuditLog[] => {
+    const data = localStorage.getItem(KEYS.LOGS);
+    return data ? JSON.parse(data) : [];
   },
-
-  getSettings: (): ExtendedSystemSettings => JSON.parse(localStorage.getItem(KEYS.SETTINGS) || JSON.stringify(DEFAULT_SETTINGS)),
-  saveSettings: (s: ExtendedSystemSettings) => localStorage.setItem(KEYS.SETTINGS, JSON.stringify(s)),
-
-  getAuditLogs: (): AuditLog[] => JSON.parse(localStorage.getItem(KEYS.LOGS) || '[]'),
   addLog: (action: string, details: string) => {
     const logs = storageService.getAuditLogs();
-    const admin = storageService.getAuth()?.username || 'System';
-    const newLog = { id: Date.now().toString(), timestamp: Date.now(), admin, action, details };
-    localStorage.setItem(KEYS.LOGS, JSON.stringify([newLog, ...logs].slice(0, 100)));
+    const auth = storageService.getAuth();
+    const newLog: AuditLog = {
+      id: Math.random().toString(36).substr(2, 9),
+      timestamp: Date.now(),
+      admin: auth?.username || 'SYSTEM',
+      action,
+      details
+    };
+    localStorage.setItem(KEYS.LOGS, JSON.stringify([newLog, ...logs].slice(0, 500)));
   },
 
-  getTrackStatus: (): TrackFlag => (localStorage.getItem(KEYS.TRACK_STATUS) as TrackFlag) || TrackFlag.VERDE,
-  saveTrackStatus: (f: TrackFlag) => localStorage.setItem(KEYS.TRACK_STATUS, f),
+  getTrackStatus: (): TrackFlag => (localStorage.getItem(KEYS.TRACK) as TrackFlag) || TrackFlag.VERDE,
+  saveTrackStatus: (flag: TrackFlag) => localStorage.setItem(KEYS.TRACK, flag),
 
-  getAuth: (): AdminUser | null => JSON.parse(localStorage.getItem(KEYS.AUTH) || 'null'),
-  setAuth: (u: AdminUser | null) => u ? localStorage.setItem(KEYS.AUTH, JSON.stringify(u)) : localStorage.removeItem(KEYS.AUTH),
+  getAuth: (): AdminUser | null => {
+    const data = localStorage.getItem(KEYS.AUTH);
+    return data ? JSON.parse(data) : null;
+  },
+  setAuth: (user: AdminUser | null) => {
+    if (user) localStorage.setItem(KEYS.AUTH, JSON.stringify(user));
+    else localStorage.removeItem(KEYS.AUTH);
+  },
 
-  getAdminUsers: (): AdminUser[] => JSON.parse(localStorage.getItem(KEYS.ADMIN_USERS) || JSON.stringify(INITIAL_ADMINS)),
-  saveAdminUsers: (u: AdminUser[]) => localStorage.setItem(KEYS.ADMIN_USERS, JSON.stringify(u)),
+  getAdminUsers: (): AdminUser[] => {
+    const data = localStorage.getItem(KEYS.ADMINS);
+    return data ? JSON.parse(data) : defaultAdmins;
+  },
+  saveAdminUsers: (users: AdminUser[]) => localStorage.setItem(KEYS.ADMINS, JSON.stringify(users)),
+
+  getRegulations: (): Regulation[] => {
+    const data = localStorage.getItem(KEYS.REGS);
+    return data ? JSON.parse(data) : [];
+  },
+  saveRegulations: (regs: Regulation[]) => localStorage.setItem(KEYS.REGS, JSON.stringify(regs)),
+
+  getChampionships: (): Championship[] => {
+    const data = localStorage.getItem(KEYS.CHAMPS);
+    return data ? JSON.parse(data) : INITIAL_CHAMPIONSHIPS;
+  },
+  saveChampionships: (champs: Championship[]) => localStorage.setItem(KEYS.CHAMPS, JSON.stringify(champs)),
+
+  getPressReleases: (): PressRelease[] => {
+    const data = localStorage.getItem(KEYS.NEWS);
+    return data ? JSON.parse(data) : [];
+  },
+  savePressReleases: (news: PressRelease[]) => localStorage.setItem(KEYS.NEWS, JSON.stringify(news)),
 
   getCategories: (): string[] => INITIAL_CATEGORIES,
-  getCircuits: (): Circuit[] => INITIAL_CIRCUITS,
-  
-  getChampionships: (): Championship[] => JSON.parse(localStorage.getItem(KEYS.CHAMPIONSHIPS) || JSON.stringify(INITIAL_CHAMPIONSHIPS)),
-  saveChampionships: (c: Championship[]) => localStorage.setItem(KEYS.CHAMPIONSHIPS, JSON.stringify(c)),
 
-  getStreamingUrl: () => '#',
-  getLiveUrl: () => storageService.getSettings().liveTimingUrl,
+  getCircuits: (): Circuit[] => {
+    const data = localStorage.getItem(KEYS.CIRCUITS);
+    return data ? JSON.parse(data) : INITIAL_CIRCUITS;
+  },
   
-  getRaceResults: (): RaceResult[] => JSON.parse(localStorage.getItem(KEYS.RESULTS) || '[]'),
-  saveRaceResults: (r: RaceResult[]) => localStorage.setItem(KEYS.RESULTS, JSON.stringify(r)),
-  
-  getRegulations: (): Regulation[] => JSON.parse(localStorage.getItem(KEYS.REGULATIONS) || '[]'),
-  saveRegulations: (r: Regulation[]) => localStorage.setItem(KEYS.REGULATIONS, JSON.stringify(r)),
-  
-  getMarketplace: (): MarketplaceItem[] => JSON.parse(localStorage.getItem(KEYS.MARKETPLACE) || '[]'),
-  saveMarketplace: (m: MarketplaceItem[]) => localStorage.setItem(KEYS.MARKETPLACE, JSON.stringify(m)),
+  getMarketplace: (): MarketplaceItem[] => {
+    const data = localStorage.getItem(KEYS.MARKET);
+    return data ? JSON.parse(data) : [];
+  },
+  saveMarketplace: (items: MarketplaceItem[]) => localStorage.setItem(KEYS.MARKET, JSON.stringify(items)),
 
-  getAssociations: () => INITIAL_ASSOCIATIONS,
-  getCategoryRankings: (category: string) => storageService.getPilots().filter(p => p.category === category)
+  getPenalties: (): Penalty[] => {
+    const data = localStorage.getItem(KEYS.PENALTIES);
+    return data ? JSON.parse(data) : [];
+  },
+  savePenalties: (penalties: Penalty[]) => localStorage.setItem(KEYS.PENALTIES, JSON.stringify(penalties)),
+
+  castVote: (pilotId: string) => {
+    storageService.addLog('VOTO', `Voto registrado para piloto ID: ${pilotId}`);
+  }
 };
